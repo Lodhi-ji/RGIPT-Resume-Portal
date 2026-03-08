@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{name}} - Resume</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Base A4 Typography and Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+            line-height: 1.25;
+            color: #000;
+            background: #fff;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 15mm;
+        }
+
+        /* --- HEADER LAYOUT --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 70px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-info h1 {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0 0 2px 0;
+        }
+
+        .header-info div {
+            font-size: 14px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            align-items: flex-end;
+        }
+
+        .header-right a {
+            color: #000;
+            text-decoration: none;
+        }
+
+        .header-right .social-links-inline {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 2px;
+            max-width: 350px;
+        }
+
+        .header-right .social-links-inline a {
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        /* --- SECTION HEADINGS --- */
+        .section-heading {
+            background-color: #EAEAEA;
+            padding: 4px 6px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 12px;
+            margin-bottom: 8px;
+            width: 100%;
+            page-break-after: avoid;
+        }
+
+        /* Prevent page breaks within sections */
+        .section-heading + * {
+            page-break-before: avoid;
+        }
+
+        /* Keep entire section together */
+        .section-wrapper {
+            page-break-inside: avoid;
+        }
+
+        /* --- EDUCATION TABLE --- */
+        table.edu-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        table.edu-table th,
+        table.edu-table td {
+            border: 1px solid #000;
+            padding: 4px 8px;
+        }
+
+        table.edu-table th {
+            font-weight: bold;
+        }
+
+        /* --- REUSABLE ITEM LAYOUT --- */
+        .item {
+            margin-bottom: 8px;
+            page-break-inside: avoid;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .item-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .item-subtitle {
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .item-date {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* Icons next to titles */
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-icon {
+            color: #333;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        /* --- LATEX STYLE BULLETS (Dashes) --- */
+        ul {
+            list-style-type: none;
+            margin: 2px 0 0 0;
+            padding: 0;
+        }
+
+        li {
+            position: relative;
+            padding-left: 14px;
+            margin-bottom: 2px;
+            text-align: justify;
+        }
+
+        li::before {
+            content: "–";
+            position: absolute;
+            left: 0;
+        }
+
+        /* --- SKILLS --- */
+        .skill-row {
+            margin-bottom: 2px;
+        }
+
+        .skill-category {
+            font-weight: bold;
+        }
+
+        /* --- PUBLICATIONS & CERTIFICATIONS --- */
+        .pub-cert-list li {
+            padding-left: 0;
+        }
+
+        .pub-cert-list li::before {
+            content: none;
+        }
+
+        .pub-cert-list li {
+            margin-bottom: 4px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        @media print {
+            body {
+                padding: 10mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <img src="data:image/png;base64,{{logoBase64}}" alt="Institute Logo" class="header-logo">
+            <div class="header-info">
+                <h1>{{name}}</h1>
+                <div>Roll No : {{rollNo}}</div>
+                <div>{{degree}}</div>
+                <div>{{branch}}</div>
+                <div>Rajiv Gandhi Institute of Petroleum Technology</div>
+            </div>
+        </div>
+        <div class="header-right">
+            {{phoneHtml}}
+            {{personalEmailHtml}}
+            {{instituteEmailHtml}}
+            {{socialLinksHtml}}
+        </div>
+    </div>
+
+    {{educationHtml}}
+
+    {{internshipsHtml}}
+
+    {{projectsHtml}}
+
+    {{publicationsHtml}}
+
+    {{certificationsHtml}}
+
+    {{skillsHtml}}
+
+    {{achievementsHtml}}
+
+    {{positionsHtml}}
+
+    {{coursesHtml}}
+
+</body>
+
+</html>

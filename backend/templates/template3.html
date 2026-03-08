@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{name}} - Resume</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      line-height: 1.7;
+      color: #2c2c2c;
+      background: #fff;
+    }
+
+    .container {
+      max-width: 750px;
+      margin: 0 auto;
+      padding: 50px 40px;
+    }
+
+    .header {
+      margin-bottom: 35px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid #333;
+    }
+
+    .header h1 {
+      font-size: 42px;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+      font-weight: 400;
+      letter-spacing: -1px;
+    }
+
+    .header .subtitle {
+      font-size: 16px;
+      color: #666;
+      font-style: italic;
+      margin-bottom: 12px;
+    }
+
+    .contact-info {
+      font-size: 13px;
+      color: #555;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .contact-info span {
+      margin-right: 15px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      color: #1a1a1a;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+      font-weight: 600;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .content-item {
+      margin-bottom: 20px;
+    }
+
+    .item-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+
+    .item-subtitle {
+      font-size: 14px;
+      color: #555;
+      font-style: italic;
+      margin-bottom: 3px;
+    }
+
+    .item-meta {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 8px;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .item-description {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.7;
+    }
+
+    .skills-container {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.9;
+    }
+
+    .education-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .education-item {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .education-label {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .simple-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .simple-list li {
+      padding: 6px 0;
+      font-size: 14px;
+      color: #444;
+      padding-left: 15px;
+      position: relative;
+    }
+
+    .simple-list li:before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: #666;
+    }
+
+    .technologies {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .social-links {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.8;
+    }
+
+    .social-link {
+      color: #333;
+      text-decoration: underline;
+      margin-right: 15px;
+    }
+
+    @media print {
+      body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      .container {
+        padding: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>{{name}}</h1>
+      <div class="subtitle">{{degree}} in {{branch}}</div>
+      <div class="contact-info">
+        <span>{{email}}</span>
+        {{#if phone}}<span>{{phone}}</span>{{/if}}
+        {{#if alternateEmail}}<span>{{alternateEmail}}</span>{{/if}}
+      </div>
+    </div>
+
+    <!-- Education Section -->
+    {{#if education}}
+    <div class="section">
+      <h2 class="section-title">Education</h2>
+      <div class="content-item">
+        <div class="item-title">{{institute}}</div>
+        <div class="item-subtitle">{{degree}} in {{branch}}</div>
+        <div class="education-grid">
+          <div class="education-item">
+            <span class="education-label">CPI:</span> {{cpi}} / 10.0
+          </div>
+          <div class="education-item">
+            <span class="education-label">Class 12th:</span> {{class12Percentage}}%
+          </div>
+          <div class="education-item">
+            <span class="education-label">School:</span> {{class12School}}
+          </div>
+          <div class="education-item">
+            <span class="education-label">Class 10th:</span> {{class10Percentage}}%
+          </div>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+    <!-- Skills Section -->
+    {{#if skills}}
+    <div class="section">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-container">
+        {{skillsText}}
+      </div>
+    </div>
+    {{/if}}
+
+    <!-- Projects Section -->
+    {{#if projects}}
+    <div class="section">
+      <h2 class="section-title">Projects</h2>
+      {{projectsList}}
+    </div>
+    {{/if}}
+
+    <!-- Internships Section -->
+    {{#if internships}}
+    <div class="section">
+      <h2 class="section-title">Experience</h2>
+      {{internshipsList}}
+    </div>
+    {{/if}}
+
+    <!-- Achievements Section -->
+    {{#if achievements}}
+    <div class="section">
+      <h2 class="section-title">Achievements</h2>
+      <ul class="simple-list">
+        {{achievementsList}}
+      </ul>
+    </div>
+    {{/if}}
+
+    <!-- Certifications Section -->
+    {{#if certifications}}
+    <div class="section">
+      <h2 class="section-title">Certifications</h2>
+      {{certificationsList}}
+    </div>
+    {{/if}}
+
+    <!-- Positions of Responsibility Section -->
+    {{#if positionsOfResponsibility}}
+    <div class="section">
+      <h2 class="section-title">Leadership</h2>
+      {{porList}}
+    </div>
+    {{/if}}
+
+    <!-- Courses Section -->
+    {{#if courses}}
+    <div class="section">
+      <h2 class="section-title">Courses</h2>
+      {{coursesList}}
+    </div>
+    {{/if}}
+
+    <!-- Social Links Section -->
+    {{#if socialLinks}}
+    <div class="section">
+      <h2 class="section-title">Links</h2>
+      <div class="social-links">
+        {{socialLinksText}}
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</body>
+</html>

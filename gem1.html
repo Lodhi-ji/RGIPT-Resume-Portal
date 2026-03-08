@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{name}} - Resume</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Base A4 Typography and Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+            line-height: 1.25;
+            color: #000;
+            background: #fff;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 15mm;
+        }
+
+        /* --- HEADER LAYOUT (Matches Image 1) --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            /* Aligns items to the center horizontally */
+            margin-bottom: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            /* Spacing exactly between logo and text */
+        }
+
+        .header-logo {
+            width: 70px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-info h1 {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0 0 2px 0;
+        }
+
+        .header-info div {
+            font-size: 14px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-right a {
+            color: #000;
+            text-decoration: none;
+        }
+
+        /* --- PROFILE LINKS (Optional Row) --- */
+        .profile-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .profile-links a {
+            color: #000;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* --- SECTION HEADINGS (Matches Image 2) --- */
+        .section-heading {
+            background-color: #EAEAEA;
+            /* Exact light gray from LaTeX */
+            padding: 4px 6px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 12px;
+            margin-bottom: 8px;
+            width: 100%;
+            /* Removed borders to match your screenshot */
+        }
+
+        /* --- EDUCATION TABLE --- */
+        table.edu-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        table.edu-table th,
+        table.edu-table td {
+            border: 1px solid #000;
+            padding: 4px 8px;
+        }
+
+        table.edu-table th {
+            font-weight: bold;
+        }
+
+        /* --- REUSABLE ITEM LAYOUT --- */
+        .item {
+            margin-bottom: 8px;
+            page-break-inside: avoid;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .item-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .item-subtitle {
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .item-date {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* Icons next to titles */
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-icon {
+            color: #333;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        /* --- LATEX STYLE BULLETS (Dashes) --- */
+        ul {
+            list-style-type: none;
+            margin: 2px 0 0 0;
+            padding: 0;
+        }
+
+        li {
+            position: relative;
+            padding-left: 14px;
+            margin-bottom: 2px;
+            text-align: justify;
+        }
+
+        li::before {
+            content: "–";
+            /* En-dash used in LaTeX */
+            position: absolute;
+            left: 0;
+        }
+
+        /* --- SKILLS --- */
+        .skill-row {
+            margin-bottom: 2px;
+        }
+
+        .skill-category {
+            font-weight: bold;
+        }
+
+        /* --- PUBLICATIONS & CERTIFICATIONS --- */
+        .pub-cert-list li {
+            padding-left: 0;
+            /* Override bullet padding */
+        }
+
+        .pub-cert-list li::before {
+            content: none;
+            /* Remove dash */
+        }
+
+        .pub-cert-list li {
+            margin-bottom: 4px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <img src="rgipt_logo.png" alt="Institute Logo" class="header-logo">
+            <div class="header-info">
+                <h1>{{name}}</h1>
+                <div>Roll No : {{rollNo}}</div>
+                <div>{{degree}}</div>
+                <div>{{branch}}</div>
+                <div>{{instituteName}}</div>
+            </div>
+        </div>
+        <div class="header-right">
+            {{#if phone}}
+            <div>{{phone}}</div>
+            {{/if}}
+            {{#if personalEmail}}
+            <div><a href="mailto:{{personalEmail}}">{{personalEmail}}</a></div>
+            {{/if}}
+            {{#if instituteEmail}}
+            <div><a href="mailto:{{instituteEmail}}">{{instituteEmail}}</a></div>
+            {{/if}}
+            {{#if headerGithub}}
+            <div><a href="{{headerGithub}}" target="_blank">Github</a></div>
+            {{/if}}
+            {{#if headerLinkedin}}
+            <div><a href="{{headerLinkedin}}" target="_blank">LinkedIn</a></div>
+            {{/if}}
+        </div>
+    </div>
+
+    {{#if profiles}}
+    <div class="profile-links">
+        {{#if profiles.github}}
+        <a href="{{profiles.github}}" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+        {{/if}}
+        {{#if profiles.linkedin}}
+        <a href="{{profiles.linkedin}}" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>
+        {{/if}}
+        {{#if profiles.leetcode}}
+        <a href="{{profiles.leetcode}}" target="_blank"><i class="fas fa-code"></i> LeetCode</a>
+        {{/if}}
+        {{#if profiles.codeforces}}
+        <a href="{{profiles.codeforces}}" target="_blank"><i class="fas fa-laptop-code"></i> Codeforces</a>
+        {{/if}}
+        {{#if profiles.portfolio}}
+        <a href="{{profiles.portfolio}}" target="_blank"><i class="fas fa-globe"></i> Portfolio</a>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#if education}}
+    <div class="section-heading">Education</div>
+    <table class="edu-table">
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Institution</th>
+                <th>Year</th>
+                <th>CPI/CGPA/Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each education}}
+            <tr>
+                <td>{{course}}</td>
+                <td>{{institution}}</td>
+                <td>{{year}}</td>
+                <td>{{score}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    {{/if}}
+
+    {{#if experience}}
+    <div class="section-heading">Experience</div>
+    {{#each experience}}
+    <div class="item">
+        <div class="flex-between">
+            <span class="item-title">{{company}}</span>
+            <span class="item-subtitle">{{duration}}</span>
+        </div>
+        <div class="flex-between">
+            <span class="item-subtitle">{{role}}</span>
+            <span class="item-subtitle" style="font-style: normal;">{{location}}</span>
+        </div>
+        <ul>
+            {{#each bullets}}
+            <li>{{this}}</li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/each}}
+    {{/if}}
+
+    {{#if projects}}
+    <div class="section-heading">Projects</div>
+    {{#each projects}}
+    <div class="item">
+        <div class="flex-between">
+            <div class="title-group">
+                <span class="item-title">{{title}}</span>
+                {{#if githubLink}}
+                <a href="{{githubLink}}" target="_blank" class="title-icon"><i class="fab fa-github"></i></a>
+                {{/if}}
+                {{#if liveLink}}
+                <a href="{{liveLink}}" target="_blank" class="title-icon"><i class="fas fa-external-link-alt"></i></a>
+                {{/if}}
+            </div>
+            <span class="item-subtitle">{{duration}}</span>
+        </div>
+        {{#if description}}
+        <div class="item-subtitle">{{description}}</div>
+        {{/if}}
+        <ul>
+            {{#each bullets}}
+            <li>{{this}}</li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/each}}
+    {{/if}}
+
+    {{#if publications}}
+    <div class="section-heading">Publications</div>
+    <ul class="pub-cert-list">
+        {{#each publications}}
+        <li>
+            {{#if paperLink}}
+            <a href="{{paperLink}}" target="_blank" class="title-icon"><i class="fas fa-file-alt"></i></a>
+            {{/if}}
+            <span><strong>{{title}}</strong> — <em>{{journal}}</em> ({{year}})</span>
+        </li>
+        {{/each}}
+    </ul>
+    {{/if}}
+
+    {{#if certifications}}
+    <div class="section-heading">Certifications</div>
+    <ul class="pub-cert-list">
+        {{#each certifications}}
+        <li>
+            {{#if certLink}}
+            <a href="{{certLink}}" target="_blank" class="title-icon"><i class="fas fa-certificate"></i></a>
+            {{/if}}
+            <span>{{name}}</span>
+        </li>
+        {{/each}}
+    </ul>
+    {{/if}}
+
+    {{#if skills}}
+    <div class="section-heading">Technical Skills</div>
+    <div class="item">
+        {{#each skills}}
+        <div class="skill-row">
+            <span class="skill-category">{{category}} :</span>
+            <span>{{items}}</span>
+        </div>
+        {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if achievements}}
+    <div class="section-heading">Achievements</div>
+    <ul>
+        {{#each achievements}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+    {{/if}}
+
+    {{#if positions}}
+    <div class="section-heading">Positions of Responsibility</div>
+    {{#each positions}}
+    <div class="item" style="margin-bottom: 6px;">
+        <div class="flex-between">
+            <span><strong>{{role}} :</strong> {{organization}}</span>
+            <span class="item-subtitle">{{duration}}</span>
+        </div>
+        {{#if description}}
+        <ul>
+            <li>{{description}}</li>
+        </ul>
+        {{/if}}
+    </div>
+    {{/each}}
+    {{/if}}
+
+    {{#if courses}}
+    <div class="section-heading">Courses</div>
+    <ul>
+        {{#each courses}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+    {{/if}}
+
+    {{#if extracurriculars}}
+    <div class="section-heading">Extracurricular Activities</div>
+    <ul>
+        {{#each extracurriculars}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+    {{/if}}
+
+</body>
+
+</html>

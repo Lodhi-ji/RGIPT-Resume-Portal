@@ -1,0 +1,266 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.upload-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.upload-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.upload-modal .modal-header h2 {
+  font-size: 24px;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #7f8c8d;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.close-btn:hover {
+  color: #2c3e50;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.upload-instructions {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.upload-instructions h3 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+.upload-instructions ul {
+  margin-left: 20px;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.file-input-container {
+  margin-bottom: 20px;
+}
+
+#file-input {
+  display: none;
+}
+
+.file-label {
+  display: block;
+  padding: 16px;
+  background: #f8f9fa;
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #667eea;
+  font-weight: 600;
+}
+
+.file-label:hover {
+  background: #e8eaf6;
+  border-color: #764ba2;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel-btn,
+.upload-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancel-btn {
+  background: #e0e0e0;
+  color: #555;
+}
+
+.cancel-btn:hover {
+  background: #d0d0d0;
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.upload-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-result {
+  padding: 20px 0;
+}
+
+.upload-result h3 {
+  font-size: 24px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.result-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-item {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.summary-item.success {
+  background: #d4edda;
+  border-left: 4px solid #28a745;
+}
+
+.summary-item.failed {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+}
+
+.summary-item .label {
+  display: block;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.summary-item .value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.success-list,
+.failed-list {
+  margin-bottom: 24px;
+}
+
+.success-list h4,
+.failed-list h4 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+.student-list,
+.error-list {
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.student-item {
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 4px solid #28a745;
+}
+
+.student-item strong {
+  color: #2c3e50;
+}
+
+.student-item small {
+  color: #7f8c8d;
+}
+
+.error-item {
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 4px solid #dc3545;
+  color: #555;
+  font-size: 14px;
+}
+
+.error-item strong {
+  color: #dc3545;
+}
+
+.close-result-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.close-result-btn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .result-summary {
+    grid-template-columns: 1fr;
+  }
+}
