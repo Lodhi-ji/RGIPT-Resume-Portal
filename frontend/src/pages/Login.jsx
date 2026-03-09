@@ -155,8 +155,8 @@ const Login = () => {
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-gray-700">
               <span className="font-semibold">Demo Credentials:</span><br/>
-              Student: priya.sharma@rgipt.ac.in / 21CS001@College123<br/>
-              Admin: admin@rgipt.ac.in / admin123
+              Student: priya.sharma@rgipt.ac.in / Pass@123<br/>
+              Admin: admin@rgipt.ac.in / Admin@RGIPT
             </p>
           </div>
         </div>
