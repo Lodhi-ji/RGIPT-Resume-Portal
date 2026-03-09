@@ -111,7 +111,7 @@ class TemplateService {
         return `<li>${text}</li>`;
       }).join('\n          ');
     }
-    // template4 uses different rendering (handled in replacePlaceholders)
+    // template2 uses different rendering (handled in replacePlaceholders)
     return '';
   }
 
@@ -144,7 +144,7 @@ class TemplateService {
         return `<div class="experience-item"><div class="item-title">${parts.join(' • ')}</div></div>`;
       }).join('\n      ');
     }
-    // template4 uses different rendering (handled in replacePlaceholders)
+    // template2 uses different rendering (handled in replacePlaceholders)
     return '';
   }
 
@@ -187,7 +187,7 @@ class TemplateService {
         return html;
       }).join('\n          ');
     }
-    // template4 uses different rendering (handled in replacePlaceholders)
+    // template2 uses different rendering (handled in replacePlaceholders)
     return '';
   }
 
@@ -210,8 +210,8 @@ class TemplateService {
     html = html.replace(/{{class12Percentage}}/g, data.class12Percentage || '');
     html = html.replace(/{{class12School}}/g, data.class12School || '');
 
-    // Template 4 specific replacements
-    if (templateName === 'template4') {
+    // Template 2 specific replacements
+    if (templateName === 'template2') {
       // Load and encode logo
       const logoBase64 = await this.getLogoBase64();
       html = html.replace(/{{logoBase64}}/g, logoBase64);
@@ -235,16 +235,16 @@ class TemplateService {
       html = html.replace(/{{instituteEmailHtml}}/g, data.email ? `<div><a href="mailto:${data.email}">${data.email}</a></div>` : '');
       
       // Replace section HTML
-      html = html.replace(/{{socialLinksHtml}}/g, sectionsEnabled.socialLinks ? this.renderTemplate4SocialLinksInline(data.socialLinks) : '');
-      html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education ? this.renderTemplate4Education(data) : '');
-      html = html.replace(/{{internshipsHtml}}/g, sectionsEnabled.internships ? this.renderTemplate4Internships(data.internships) : '');
-      html = html.replace(/{{projectsHtml}}/g, sectionsEnabled.projects ? this.renderTemplate4Projects(data.projects) : '');
-      html = html.replace(/{{publicationsHtml}}/g, sectionsEnabled.publications ? this.renderTemplate4Publications(data.publications) : '');
-      html = html.replace(/{{certificationsHtml}}/g, sectionsEnabled.certifications ? this.renderTemplate4Certifications(data.certifications) : '');
-      html = html.replace(/{{skillsHtml}}/g, sectionsEnabled.skills ? this.renderTemplate4Skills(data.skills) : '');
-      html = html.replace(/{{achievementsHtml}}/g, sectionsEnabled.achievements ? this.renderTemplate4Achievements(data.achievements) : '');
-      html = html.replace(/{{positionsHtml}}/g, sectionsEnabled.positionsOfResponsibility ? this.renderTemplate4POR(data.positionsOfResponsibility) : '');
-      html = html.replace(/{{coursesHtml}}/g, sectionsEnabled.courses ? this.renderTemplate4Courses(data.courses) : '');
+      html = html.replace(/{{socialLinksHtml}}/g, sectionsEnabled.socialLinks ? this.renderTemplate2SocialLinksInline(data.socialLinks) : '');
+      html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education ? this.renderTemplate2Education(data) : '');
+      html = html.replace(/{{internshipsHtml}}/g, sectionsEnabled.internships ? this.renderTemplate2Internships(data.internships) : '');
+      html = html.replace(/{{projectsHtml}}/g, sectionsEnabled.projects ? this.renderTemplate2Projects(data.projects) : '');
+      html = html.replace(/{{publicationsHtml}}/g, sectionsEnabled.publications ? this.renderTemplate2Publications(data.publications) : '');
+      html = html.replace(/{{certificationsHtml}}/g, sectionsEnabled.certifications ? this.renderTemplate2Certifications(data.certifications) : '');
+      html = html.replace(/{{skillsHtml}}/g, sectionsEnabled.skills ? this.renderTemplate2Skills(data.skills) : '');
+      html = html.replace(/{{achievementsHtml}}/g, sectionsEnabled.achievements ? this.renderTemplate2Achievements(data.achievements) : '');
+      html = html.replace(/{{positionsHtml}}/g, sectionsEnabled.positionsOfResponsibility ? this.renderTemplate2POR(data.positionsOfResponsibility) : '');
+      html = html.replace(/{{coursesHtml}}/g, sectionsEnabled.courses ? this.renderTemplate2Courses(data.courses) : '');
       
       return html;
     }
@@ -319,8 +319,8 @@ class TemplateService {
     return html.replace(regex, shouldShow ? '$1' : '');
   }
 
-  // Template 4 (LaTeX-inspired) specific rendering methods
-  renderTemplate4Education(data) {
+  // Template 2 (LaTeX-inspired) specific rendering methods
+  renderTemplate2Education(data) {
     const rows = [];
     
     // Add degree education
@@ -376,7 +376,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Internships(internships) {
+  renderTemplate2Internships(internships) {
     if (!internships || internships.length === 0) return '';
     
     const items = internships.map(internship => {
@@ -408,7 +408,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Projects(projects) {
+  renderTemplate2Projects(projects) {
     if (!projects || projects.length === 0) return '';
     
     const items = projects.map(project => {
@@ -446,7 +446,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Publications(publications) {
+  renderTemplate2Publications(publications) {
     if (!publications || publications.length === 0) return '';
     
     const items = publications.map(pub => {
@@ -467,7 +467,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Certifications(certifications) {
+  renderTemplate2Certifications(certifications) {
     if (!certifications || certifications.length === 0) return '';
     
     const items = certifications.map(cert => {
@@ -488,7 +488,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Skills(skills) {
+  renderTemplate2Skills(skills) {
     if (!skills || skills.length === 0) return '';
     
     // Group skills by category if they're strings, or use as-is if objects
@@ -518,7 +518,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Achievements(achievements) {
+  renderTemplate2Achievements(achievements) {
     if (!achievements || achievements.length === 0) return '';
     
     const items = achievements.map(achievement => `
@@ -532,7 +532,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4POR(positions) {
+  renderTemplate2POR(positions) {
     if (!positions || positions.length === 0) return '';
     
     const items = positions.map(pos => {
@@ -560,7 +560,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4Courses(courses) {
+  renderTemplate2Courses(courses) {
     if (!courses || courses.length === 0) return '';
     
     const items = courses.map(course => {
@@ -577,7 +577,7 @@ class TemplateService {
     </div>`;
   }
 
-  renderTemplate4SocialLinks(socialLinks) {
+  renderTemplate2SocialLinks(socialLinks) {
     if (!socialLinks) return '';
     
     let links = [];
@@ -605,8 +605,8 @@ class TemplateService {
     </div>`;
   }
 
-  // Render social links inline for template4 header
-  renderTemplate4SocialLinksInline(socialLinks) {
+  // Render social links inline for template2 header
+  renderTemplate2SocialLinksInline(socialLinks) {
     if (!socialLinks) return '';
     
     let links = [];
@@ -634,7 +634,7 @@ class TemplateService {
         </div>`;
   }
 
-  // Load and encode logo for template4
+  // Load and encode logo for template2
   async getLogoBase64() {
     try {
       const fs = require('fs').promises;

@@ -101,12 +101,12 @@ const createResumeVersion = async (req, res) => {
     }
 
     // Validate template
-    const validTemplates = ['template1', 'template4'];
+    const validTemplates = ['template1', 'template2'];
     if (template && !validTemplates.includes(template)) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid template. Must be template1 or template4',
+          message: 'Invalid template. Must be template1 or template2',
           code: 'INVALID_TEMPLATE'
         }
       });
@@ -256,12 +256,12 @@ const updateResumeVersion = async (req, res) => {
 
     // Validate template if provided
     if (template) {
-      const validTemplates = ['template1', 'template4'];
+      const validTemplates = ['template1', 'template2'];
       if (!validTemplates.includes(template)) {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Invalid template. Must be template1 or template4',
+            message: 'Invalid template. Must be template1 or template2',
             code: 'INVALID_TEMPLATE'
           }
         });

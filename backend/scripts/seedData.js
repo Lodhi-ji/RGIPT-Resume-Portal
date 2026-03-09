@@ -540,7 +540,7 @@ const seedData = async () => {
       {
         studentId: students[0]._id, // Priya Sharma
         name: 'Software Engineer Resume',
-        template: 'template4',
+        template: 'template2',
         sectionsEnabled: {
           education: true,
           projects: true,
@@ -584,7 +584,7 @@ const seedData = async () => {
       {
         studentId: students[2]._id, // Ritik Lodhi
         name: 'Software Developer Resume',
-        template: 'template4',
+        template: 'template2',
         sectionsEnabled: {
           education: true,
           projects: true,
@@ -606,7 +606,7 @@ const seedData = async () => {
       {
         studentId: students[2]._id, // Ritik Lodhi - Second resume version
         name: 'Full Stack Developer Resume',
-        template: 'template4',
+        template: 'template2',
         sectionsEnabled: {
           education: true,
           projects: true,
