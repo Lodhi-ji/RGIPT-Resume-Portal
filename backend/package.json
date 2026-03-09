@@ -24,11 +24,13 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.0",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^8.0.1",
     "puppeteer": "^21.5.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "axios": "^1.13.6",
+    "fast-check": "^4.6.0",
     "form-data": "^4.0.5",
     "nodemon": "^3.0.1"
   }

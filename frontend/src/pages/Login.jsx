@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -134,6 +134,22 @@ const Login = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          {/* Sign Up and Forgot Password Links */}
+          <div className="mt-6 flex items-center justify-between text-sm">
+            <Link 
+              to="/activate-account" 
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            >
+              Sign Up / Activate Account
+            </Link>
+            <Link 
+              to="/forgot-password" 
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            >
+              Forgot Password?
+            </Link>
+          </div>
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">

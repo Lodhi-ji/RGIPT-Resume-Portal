@@ -13,6 +13,8 @@ const AdminDashboard = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [resetPasswordStudent, setResetPasswordStudent] = useState(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -45,6 +47,31 @@ const AdminDashboard = () => {
 
   const handleCloseStudentModal = () => {
     setSelectedStudent(null);
+  };
+
+  const handleResetPasswordClick = (student) => {
+    setResetPasswordStudent(student);
+  };
+
+  const handleCancelResetPassword = () => {
+    setResetPasswordStudent(null);
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!resetPasswordStudent) return;
+
+    setIsResettingPassword(true);
+    try {
+      await api.post(`/admin/reset-student-password/${resetPasswordStudent._id}`);
+      alert('Password reset successful! A new password has been sent to the student\'s email.');
+      setResetPasswordStudent(null);
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to reset password';
+      alert(`Failed to reset password: ${errorMessage}`);
+    } finally {
+      setIsResettingPassword(false);
+    }
   };
 
   // Filter students based on search and department
@@ -316,6 +343,13 @@ const AdminDashboard = () => {
                           <button className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold rounded-md transition-colors duration-200">
                             Edit
                           </button>
+                          <button 
+                            onClick={() => handleResetPasswordClick(student)}
+                            className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold rounded-md transition-colors duration-200"
+                            title="Reset student password"
+                          >
+                            Reset Password
+                          </button>
                           <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors duration-200">
                             Delete
                           </button>
@@ -371,6 +405,44 @@ const AdminDashboard = () => {
             student={selectedStudent}
             onClose={handleCloseStudentModal}
           />
+        )}
+
+        {/* Reset Password Confirmation Dialog */}
+        {resetPasswordStudent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  Reset Password
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to reset the password for{' '}
+                  <span className="font-semibold">{resetPasswordStudent.name}</span>?
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  A new randomly generated password will be sent to{' '}
+                  <span className="font-semibold">{resetPasswordStudent.instituteEmail}</span>.
+                  The student's current password will be immediately invalidated.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={handleCancelResetPassword}
+                    disabled={isResettingPassword}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmResetPassword}
+                    disabled={isResettingPassword}
+                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isResettingPassword ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

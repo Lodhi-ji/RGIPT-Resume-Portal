@@ -1,8 +1,56 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
-// Generate default password for students
+// Generate default password for students (deprecated - use generateRandomPassword)
 const generateDefaultPassword = (rollNo) => {
   return `${rollNo}@College123`;
+};
+
+/**
+ * Generate a cryptographically secure random password
+ * @returns {string} 8-character password with required complexity
+ */
+const generateRandomPassword = () => {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const digits = '0123456789';
+  const special = '!@#$%^&*';
+  
+  // Ensure at least one character from each set
+  const password = [
+    uppercase[crypto.randomInt(0, uppercase.length)],
+    lowercase[crypto.randomInt(0, lowercase.length)],
+    digits[crypto.randomInt(0, digits.length)],
+    special[crypto.randomInt(0, special.length)]
+  ];
+  
+  // Fill remaining 4 characters from all sets
+  const allChars = uppercase + lowercase + digits + special;
+  for (let i = 0; i < 4; i++) {
+    password.push(allChars[crypto.randomInt(0, allChars.length)]);
+  }
+  
+  // Shuffle the password array using Fisher-Yates algorithm
+  for (let i = password.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [password[i], password[j]] = [password[j], password[i]];
+  }
+  
+  return password.join('');
+};
+
+/**
+ * Validate password meets complexity requirements
+ * @param {string} password - Password to validate
+ * @returns {boolean} True if password meets requirements
+ */
+const validatePasswordComplexity = (password) => {
+  if (password.length !== 8) return false;
+  if (!/[A-Z]/.test(password)) return false;
+  if (!/[a-z]/.test(password)) return false;
+  if (!/[0-9]/.test(password)) return false;
+  if (!/[!@#$%^&*]/.test(password)) return false;
+  return true;
 };
 
 // Hash password
@@ -51,6 +99,8 @@ const cleanUrl = (url) => {
 
 module.exports = {
   generateDefaultPassword,
+  generateRandomPassword,
+  validatePasswordComplexity,
   hashPassword,
   formatDate,
   formatDateRange,

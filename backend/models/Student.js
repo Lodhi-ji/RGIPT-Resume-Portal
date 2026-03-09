@@ -63,7 +63,13 @@ const studentSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required']
+    required: false,  // Optional until account is activated
+    default: null
+  },
+  passwordSet: {
+    type: Boolean,
+    default: false,  // False until student activates account
+    required: true
   },
   isFirstLogin: {
     type: Boolean,

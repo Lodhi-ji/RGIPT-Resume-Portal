@@ -10,6 +10,10 @@ import StudentDashboard from './pages/StudentDashboard';
 import ProfilePage from './pages/ProfilePage';
 import ResumePage from './pages/ResumePage';
 
+// Auth Components
+import AccountActivationForm from './components/AccountActivationForm';
+import PasswordResetForm from './components/PasswordResetForm';
+
 function App() {
   const { user } = useAuth();
 
@@ -18,6 +22,8 @@ function App() {
       {user && <Navbar />}
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+        <Route path="/activate-account" element={user ? <Navigate to="/" /> : <AccountActivationForm />} />
+        <Route path="/forgot-password" element={user ? <Navigate to="/" /> : <PasswordResetForm />} />
         
         <Route
           path="/"

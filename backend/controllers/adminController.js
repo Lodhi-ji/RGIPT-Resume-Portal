@@ -1,4 +1,7 @@
 const excelService = require('../services/excelService');
+const { generateRandomPassword, hashPassword } = require('../utils/helpers');
+const emailService = require('../services/emailService');
+const auditLogger = require('../utils/auditLogger');
 
 // @desc    Upload Excel file and create students
 // @route   POST /api/admin/upload-students
@@ -44,7 +47,7 @@ const uploadStudents = async (req, res) => {
     }
 
     // Create students from Excel data
-    const results = await excelService.createStudentsFromExcel(excelData);
+    const results = await excelService.createStudentsFromExcel(excelData, req.user.id);
 
     // Prepare response
     const response = {
@@ -430,6 +433,76 @@ const getStudentProfile = async (req, res) => {
   }
 };
 
+// @desc    Reset student password (admin action)
+// @route   POST /api/admin/reset-student-password/:studentId
+// @access  Private/Admin
+const resetStudentPassword = async (req, res) => {
+  try {
+    const Student = require('../models/Student');
+    const { studentId } = req.params;
+
+    // Find student
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Student not found',
+          code: 'STUDENT_NOT_FOUND'
+        }
+      });
+    }
+
+    // Generate new password
+    const newPassword = generateRandomPassword();
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password in database
+    await Student.findByIdAndUpdate(studentId, {
+      password: hashedPassword,
+      passwordSet: true,
+      isFirstLogin: true // Reset first login flag
+    });
+
+    // Send email with new password
+    const emailResult = await emailService.sendAdminResetEmail({
+      studentName: student.name,
+      email: student.instituteEmail,
+      password: newPassword,
+      loginUrl: process.env.PORTAL_URL
+    });
+
+    // Log the admin reset
+    await auditLogger.logAdminPasswordReset(req.user.id, studentId);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          message: 'Password was reset but email delivery failed',
+          code: 'EMAIL_DELIVERY_FAILED'
+        }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Password reset email sent to ${student.instituteEmail}`
+      // Note: Password is NOT included in response
+    });
+  } catch (error) {
+    console.error('Admin password reset error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Server error',
+        code: 'SERVER_ERROR'
+      }
+    });
+  }
+};
+
 module.exports = {
   uploadStudents,
   getAllStudents,
@@ -438,5 +511,6 @@ module.exports = {
   getStudentResumes,
   getResumePreview,
   downloadResumePDF,
-  getStudentProfile
+  getStudentProfile,
+  resetStudentPassword
 };

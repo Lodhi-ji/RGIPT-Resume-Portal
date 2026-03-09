@@ -2,15 +2,26 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ChangePassword from '../components/ChangePassword';
+import FirstLoginModal from '../components/FirstLoginModal';
+import { useAuth } from '../context/AuthContext';
 
 const StudentDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
+  const { isFirstLogin, updateIsFirstLogin } = useAuth();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Show FirstLoginModal automatically when isFirstLogin is true
+    if (isFirstLogin) {
+      setShowFirstLoginModal(true);
+    }
+  }, [isFirstLogin]);
 
   const fetchData = async () => {
     try {
@@ -29,6 +40,17 @@ const StudentDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePasswordChanged = () => {
+    // Update isFirstLogin state to false after successful password change
+    updateIsFirstLogin(false);
+    setShowFirstLoginModal(false);
+  };
+
+  const handleCloseFirstLoginModal = () => {
+    // Allow user to skip the modal
+    setShowFirstLoginModal(false);
   };
 
   const handleDownload = async (resumeId, resumeName) => {
@@ -74,10 +96,10 @@ const StudentDashboard = () => {
             </h1>
             <p className="text-gray-600 mt-2">Manage your profile and resumes</p>
           </div>
-          {student.isFirstLogin && (
+          {isFirstLogin && (
             <button 
               className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200"
-              onClick={() => setShowChangePassword(true)}
+              onClick={() => setShowFirstLoginModal(true)}
             >
               Change Password
             </button>
@@ -225,6 +247,14 @@ const StudentDashboard = () => {
 
       {showChangePassword && (
         <ChangePassword onClose={() => setShowChangePassword(false)} />
+      )}
+
+      {showFirstLoginModal && (
+        <FirstLoginModal 
+          isOpen={showFirstLoginModal}
+          onClose={handleCloseFirstLoginModal}
+          onPasswordChanged={handlePasswordChanged}
+        />
       )}
       </div>
     </div>

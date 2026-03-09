@@ -38,7 +38,7 @@ const seedData = async () => {
           percentage: 90.5,
           school: 'DAV Public School'
         },
-        password: await bcrypt.hash('21CS001@College123', salt),
+        password: await bcrypt.hash('Pass@123', salt),
         role: 'student'
       },
       {
@@ -92,7 +92,7 @@ const seedData = async () => {
           percentage: 100.0,
           school: 'Admin School'
         },
-        password: await bcrypt.hash('admin123', salt),
+        password: await bcrypt.hash('Admin@RGIPT', salt),
         role: 'admin'
       }
     ];
@@ -635,7 +635,7 @@ const seedData = async () => {
     console.log('\nTest Login Credentials:');
     console.log('1. Student (Priya Sharma):');
     console.log('   Email: priya.sharma@rgipt.ac.in');
-    console.log('   Password: 21CS001@College123');
+    console.log('   Password: Pass@123');
     console.log('\n2. Student (Anshika Verma):');
     console.log('   Email: anshika.verma@rgipt.ac.in');
     console.log('   Password: ECHE19069@College123');
@@ -644,7 +644,7 @@ const seedData = async () => {
     console.log('   Password: 23CD3054@College123');
     console.log('\n4. Admin:');
     console.log('   Email: admin@rgipt.ac.in');
-    console.log('   Password: admin123');
+    console.log('   Password: Admin@RGIPT');
     console.log('\n=== You can now test the authentication endpoints ===');
 
     process.exit(0);

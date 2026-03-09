@@ -7,7 +7,8 @@ const {
   getStudentResumes,
   getResumePreview,
   downloadResumePDF,
-  getStudentProfile
+  getStudentProfile,
+  resetStudentPassword
 } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/auth');
 const { upload, handleUploadError } = require('../middleware/upload');
@@ -31,6 +32,9 @@ router.get('/students', getAllStudents);
 
 // Get statistics
 router.get('/stats', getStats);
+
+// Password management
+router.post('/reset-student-password/:studentId', resetStudentPassword);
 
 // Resume management routes
 router.get('/resumes', getAllResumes);

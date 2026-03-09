@@ -1,7 +1,8 @@
 const xlsx = require('xlsx');
 const Student = require('../models/Student');
 const Profile = require('../models/Profile');
-const { generateDefaultPassword, hashPassword, isValidEmail } = require('../utils/helpers');
+const { isValidEmail } = require('../utils/helpers');
+const auditLogger = require('../utils/auditLogger');
 
 class ExcelService {
   // Parse Excel file buffer
@@ -120,8 +121,6 @@ class ExcelService {
   // Transform Excel row to Student object
   async transformToStudent(excelRow) {
     const rollNo = excelRow.rollNo.toString().trim();
-    const defaultPassword = generateDefaultPassword(rollNo);
-    const hashedPassword = await hashPassword(defaultPassword);
 
     return {
       name: excelRow.name.trim(),
@@ -138,13 +137,14 @@ class ExcelService {
         percentage: parseFloat(excelRow['12th percentage']),
         school: excelRow['12th school'].trim()
       },
-      password: hashedPassword,
+      password: null,  // No password until student activates account
+      passwordSet: false,  // Account not activated yet
       role: 'student'
     };
   }
 
   // Create students from Excel data
-  async createStudentsFromExcel(excelData) {
+  async createStudentsFromExcel(excelData, adminId = null) {
     const results = {
       success: [],
       failed: []
@@ -202,7 +202,7 @@ class ExcelService {
               name: studentData.name,
               email: studentData.instituteEmail,
               action: 'updated',
-              defaultPassword: 'Password unchanged'
+              status: 'Student data updated'
             });
             continue;
           } catch (error) {
@@ -247,12 +247,18 @@ class ExcelService {
           socialLinks: []
         });
 
+        // Log profile creation to audit log
+        if (adminId) {
+          await auditLogger.logProfileCreation(student._id, adminId);
+        }
+
         results.success.push({
           row: i + 2,
           rollNo: student.rollNo,
           name: student.name,
           email: student.instituteEmail,
-          defaultPassword: generateDefaultPassword(student.rollNo)
+          action: 'created',
+          status: 'Account created - Student must activate via email'
         });
 
       } catch (error) {
