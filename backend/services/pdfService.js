@@ -148,7 +148,15 @@ class PDFService {
 
       // Step 4: Launch browser (isolated for this request)
       console.log('Launching browser...');
-      browser = await puppeteer.launch({
+      
+      // Determine browser executable path
+      const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || 
+                            process.env.CHROME_BIN || 
+                            '/usr/bin/chromium-browser';
+      
+      console.log(`Using browser executable: ${executablePath}`);
+      
+      const launchOptions = {
         headless: 'new',
         args: [
           '--no-sandbox',
@@ -162,7 +170,14 @@ class PDFService {
           '--single-process'
         ],
         timeout: 30000  // 30 seconds to launch
-      });
+      };
+      
+      // Only set executablePath if we're in production (Render)
+      if (process.env.NODE_ENV === 'production') {
+        launchOptions.executablePath = executablePath;
+      }
+      
+      browser = await puppeteer.launch(launchOptions);
       console.log('Browser launched successfully');
 
       // Step 5: Create new page
