@@ -1,6 +1,6 @@
 import '../../styles/ErrorMessage.css';
 
-const ErrorMessage = ({ error, field }) => {
+const ErrorMessage = ({ error }) => {
   if (!error) return null;
   
   return (

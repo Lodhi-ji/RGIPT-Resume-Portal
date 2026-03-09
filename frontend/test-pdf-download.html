@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test PDF Download</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>PDF Download Test</h1>
+  
+  <div class="test-section">
+    <h2>Test PDF Download Functionality</h2>
+    <p>This test simulates the PDF download process from the Resume Builder.</p>
+    
+    <label for="resumeId">Resume ID:</label>
+    <input type="text" id="resumeId" placeholder="Enter resume version ID">
+    
+    <label for="token">Auth Token:</label>
+    <input type="text" id="token" placeholder="Enter your JWT token">
+    
+    <button onclick="testPDFDownload()">Test PDF Download</button>
+    
+    <div id="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>How to Use:</h2>
+    <ol>
+      <li>Login to the application and get your JWT token from localStorage</li>
+      <li>Create or select a resume and copy its ID</li>
+      <li>Paste both values above and click "Test PDF Download"</li>
+      <li>The PDF should download automatically if successful</li>
+    </ol>
+  </div>
+
+  <script>
+    async function testPDFDownload() {
+      const resumeId = document.getElementById('resumeId').value;
+      const token = document.getElementById('token').value;
+      const resultDiv = document.getElementById('result');
+      
+      if (!resumeId || !token) {
+        resultDiv.innerHTML = '<div class="result error">Please enter both Resume ID and Auth Token</div>';
+        return;
+      }
+      
+      resultDiv.innerHTML = '<div class="result">Testing PDF download...</div>';
+      
+      try {
+        const response = await fetch(`http://localhost:5000/api/resume-versions/${resumeId}/generate`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Failed to download PDF');
+        }
+        
+        // Get the blob
+        const blob = await response.blob();
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `resume_${resumeId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+        resultDiv.innerHTML = '<div class="result success">✓ PDF downloaded successfully!</div>';
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">✗ Error: ${error.message}</div>`;
+        console.error('PDF download error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

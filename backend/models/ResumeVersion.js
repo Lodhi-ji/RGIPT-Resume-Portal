@@ -14,7 +14,7 @@ const resumeVersionSchema = new mongoose.Schema({
   template: {
     type: String,
     required: [true, 'Template is required'],
-    enum: ['template1', 'template2', 'template3', 'template4'],
+    enum: ['template1', 'template4'],
     default: 'template1'
   },
   sectionsEnabled: {

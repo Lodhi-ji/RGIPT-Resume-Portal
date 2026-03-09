@@ -101,12 +101,12 @@ const createResumeVersion = async (req, res) => {
     }
 
     // Validate template
-    const validTemplates = ['template1', 'template2', 'template3', 'template4'];
+    const validTemplates = ['template1', 'template4'];
     if (template && !validTemplates.includes(template)) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid template. Must be template1, template2, template3, or template4',
+          message: 'Invalid template. Must be template1 or template4',
           code: 'INVALID_TEMPLATE'
         }
       });
@@ -256,12 +256,12 @@ const updateResumeVersion = async (req, res) => {
 
     // Validate template if provided
     if (template) {
-      const validTemplates = ['template1', 'template2', 'template3', 'template4'];
+      const validTemplates = ['template1', 'template4'];
       if (!validTemplates.includes(template)) {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Invalid template. Must be template1, template2, template3, or template4',
+            message: 'Invalid template. Must be template1 or template4',
             code: 'INVALID_TEMPLATE'
           }
         });
@@ -487,9 +487,13 @@ const generateResumePreview = async (req, res) => {
 // @access  Private/Student
 const generateResumePDF = async (req, res) => {
   try {
+    console.log('PDF generation requested for resume:', req.params.id);
+    console.log('User ID:', req.user.id);
+    
     const resumeVersion = await ResumeVersion.findById(req.params.id);
 
     if (!resumeVersion) {
+      console.log('Resume version not found:', req.params.id);
       return res.status(404).json({
         success: false,
         error: {
@@ -501,6 +505,7 @@ const generateResumePDF = async (req, res) => {
 
     // Check if resume belongs to current student
     if (resumeVersion.studentId.toString() !== req.user.id) {
+      console.log('Authorization failed. Resume belongs to:', resumeVersion.studentId, 'User is:', req.user.id);
       return res.status(403).json({
         success: false,
         error: {
@@ -510,11 +515,15 @@ const generateResumePDF = async (req, res) => {
       });
     }
 
+    console.log('Generating PDF...');
     // Generate PDF
     const { pdfBuffer, fileName } = await pdfService.generateResumePDF(
       req.params.id,
       req.user.id
     );
+
+    console.log('PDF generated successfully. Size:', pdfBuffer.length, 'bytes');
+    console.log('Filename:', fileName);
 
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
@@ -523,8 +532,10 @@ const generateResumePDF = async (req, res) => {
 
     // Send PDF
     res.send(pdfBuffer);
+    console.log('PDF sent to client');
   } catch (error) {
     console.error('Generate PDF error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: {

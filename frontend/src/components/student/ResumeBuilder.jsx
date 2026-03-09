@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
+import PDFDownloadDebugger from '../PDFDownloadDebugger';
 
 const ResumeBuilder = ({ resume, profile, onClose }) => {
   const [activeTab, setActiveTab] = useState('basic');
@@ -182,12 +183,23 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!resume?._id) return;
+    if (!resume?._id) {
+      setError('No resume ID found. Please save the resume first.');
+      return;
+    }
     
     try {
+      console.log('Downloading PDF for resume:', resume._id);
       const response = await api.get(`/resume-versions/${resume._id}/generate`, {
         responseType: 'blob',
       });
+      
+      console.log('PDF response received:', response);
+      
+      // Check if response is actually a blob
+      if (!(response.data instanceof Blob)) {
+        throw new Error('Invalid response format');
+      }
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -197,8 +209,12 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch {
-      setError('Failed to download PDF');
+      
+      console.log('PDF download triggered successfully');
+    } catch (err) {
+      console.error('PDF download error:', err);
+      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to download PDF';
+      setError(errorMessage);
     }
   };
 
@@ -350,8 +366,6 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                     <div className="grid grid-cols-2 gap-4">
                       {[
                         { value: 'template1', name: 'Modern' },
-                        { value: 'template2', name: 'Sidebar' },
-                        { value: 'template3', name: 'Minimal' },
                         { value: 'template4', name: 'LaTeX (RGIPT)' }
                       ].map((template) => (
                         <button
@@ -593,6 +607,11 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
           </div>
         </div>
       </div>
+      
+      {/* PDF Download Debugger - Remove this after debugging */}
+      {process.env.NODE_ENV === 'development' && (
+        <PDFDownloadDebugger resumeId={resume?._id} />
+      )}
     </div>
   );
 };

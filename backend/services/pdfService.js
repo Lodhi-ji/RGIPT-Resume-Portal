@@ -6,46 +6,12 @@ const templateService = require('./templateService');
 
 class PDFService {
   constructor() {
-    this.browser = null;
-  }
-
-  // Initialize browser instance (reuse for performance)
-  async initBrowser() {
-    if (!this.browser) {
-      const options = {
-        headless: 'new',
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process'
-        ]
-      };
-
-      // Use system Chrome on production (Render/Railway)
-      if (process.env.NODE_ENV === 'production') {
-        options.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || 
-          '/usr/bin/chromium-browser';
-      }
-
-      this.browser = await puppeteer.launch(options);
-    }
-    return this.browser;
-  }
-
-  // Close browser instance
-  async closeBrowser() {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-    }
+    // No shared browser instance - each request gets its own browser
+    console.log('PDFService initialized - using isolated browser per request');
   }
 
   // Fetch all data needed for resume
-  async fetchResumeData(resumeVersionId, studentId) {
+  async fetchResumeData(resumeVersionId, studentId, skipAuthCheck = false) {
     try {
       // Get resume version
       const resumeVersion = await ResumeVersion.findById(resumeVersionId);
@@ -54,20 +20,20 @@ class PDFService {
         throw new Error('Resume version not found');
       }
 
-      // Verify ownership
-      if (resumeVersion.studentId.toString() !== studentId) {
+      // Verify ownership (skip for admin downloads)
+      if (!skipAuthCheck && resumeVersion.studentId.toString() !== studentId) {
         throw new Error('Not authorized to access this resume');
       }
 
       // Get student data
-      const student = await Student.findById(studentId).select('-password');
+      const student = await Student.findById(resumeVersion.studentId).select('-password');
       
       if (!student) {
         throw new Error('Student not found');
       }
 
       // Get profile data
-      const profile = await Profile.findOne({ studentId });
+      const profile = await Profile.findOne({ studentId: resumeVersion.studentId });
       
       if (!profile) {
         throw new Error('Profile not found');
@@ -151,19 +117,73 @@ class PDFService {
     }
   }
 
-  // Generate PDF from HTML
-  async generatePDFFromHTML(html) {
+  // Main method to generate resume PDF
+  async generateResumePDF(resumeVersionId, studentId, skipAuthCheck = false) {
+    let browser = null;
+    let page = null;
+    
     try {
-      const browser = await this.initBrowser();
-      const page = await browser.newPage();
+      console.log(`Starting PDF generation for resume: ${resumeVersionId}`);
+      
+      // Step 1: Fetch all required data
+      const { data, template, sectionsEnabled, resumeName } = await this.fetchResumeData(
+        resumeVersionId,
+        studentId,
+        skipAuthCheck
+      );
+      console.log('Resume data fetched successfully');
 
-      // Set content with timeout
-      await page.setContent(html, {
-        waitUntil: 'networkidle0',
-        timeout: 60000 // 60 seconds timeout for production
+      // Step 2: Load template
+      const templateHTML = await templateService.getTemplate(template);
+      console.log(`Template ${template} loaded`);
+
+      // Step 3: Replace placeholders with actual data
+      const renderedHTML = await templateService.replacePlaceholders(
+        templateHTML,
+        data,
+        sectionsEnabled,
+        template
+      );
+      console.log('Template rendered with data');
+
+      // Step 4: Launch browser (isolated for this request)
+      console.log('Launching browser...');
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-background-networking',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process'
+        ],
+        timeout: 30000  // 30 seconds to launch
       });
+      console.log('Browser launched successfully');
 
-      // Generate PDF
+      // Step 5: Create new page
+      page = await browser.newPage();
+      
+      // Set viewport for consistent rendering
+      await page.setViewport({
+        width: 1200,
+        height: 1600,
+        deviceScaleFactor: 1
+      });
+      console.log('Page created');
+
+      // Step 6: Load HTML content
+      await page.setContent(renderedHTML, {
+        waitUntil: 'networkidle0',
+        timeout: 30000  // 30 seconds to load content
+      });
+      console.log('HTML content loaded');
+
+      // Step 7: Generate PDF
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -174,44 +194,46 @@ class PDFService {
           left: '0px'
         }
       });
+      console.log(`PDF generated successfully. Size: ${pdfBuffer.length} bytes`);
 
+      // Step 8: Cleanup
       await page.close();
+      page = null;
+      await browser.close();
+      browser = null;
+      console.log('Browser closed successfully');
 
-      return pdfBuffer;
-    } catch (error) {
-      throw new Error(`Failed to generate PDF: ${error.message}`);
-    }
-  }
-
-  // Main method to generate resume PDF
-  async generateResumePDF(resumeVersionId, studentId) {
-    try {
-      // Fetch all required data
-      const { data, template, sectionsEnabled, resumeName } = await this.fetchResumeData(
-        resumeVersionId,
-        studentId
-      );
-
-      // Load template
-      const templateHTML = await templateService.getTemplate(template);
-
-      // Replace placeholders with actual data (await for template4 async operations)
-      const renderedHTML = await templateService.replacePlaceholders(
-        templateHTML,
-        data,
-        sectionsEnabled,
-        template
-      );
-
-      // Generate PDF
-      const pdfBuffer = await this.generatePDFFromHTML(renderedHTML);
-
+      // Step 9: Return result
+      const fileName = `${data.name.replace(/\s+/g, '_')}_${resumeName.replace(/\s+/g, '_')}.pdf`;
       return {
         pdfBuffer,
-        fileName: `${data.name.replace(/\s+/g, '_')}_${resumeName.replace(/\s+/g, '_')}.pdf`
+        fileName
       };
+
     } catch (error) {
-      throw new Error(`Failed to generate resume PDF: ${error.message}`);
+      console.error('PDF generation error:', error.message);
+      
+      // Cleanup on error
+      if (page) {
+        try {
+          await page.close();
+          console.log('Page closed after error');
+        } catch (closeError) {
+          console.error('Error closing page:', closeError.message);
+        }
+      }
+      
+      if (browser) {
+        try {
+          await browser.close();
+          console.log('Browser closed after error');
+        } catch (closeError) {
+          console.error('Error closing browser:', closeError.message);
+        }
+      }
+      
+      // Re-throw with clear message
+      throw new Error(`Failed to generate PDF: ${error.message}`);
     }
   }
 }

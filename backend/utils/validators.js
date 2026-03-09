@@ -200,8 +200,8 @@ const resumeVersionValidation = [
     .isLength({ min: 3, max: 100 })
     .withMessage('Resume name must be between 3 and 100 characters'),
   body('template')
-    .isIn(['template1', 'template2', 'template3', 'template4'])
-    .withMessage('Invalid template. Must be one of: template1, template2, template3, template4'),
+    .isIn(['template1', 'template4'])
+    .withMessage('Invalid template. Must be one of: template1, template4'),
   body('sectionsEnabled')
     .optional()
     .isObject()

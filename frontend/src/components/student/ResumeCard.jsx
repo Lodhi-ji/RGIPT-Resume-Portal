@@ -8,9 +8,23 @@ const ResumeCard = ({ resume, onEdit, onDelete }) => {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
+      console.log('Generating PDF for resume:', resume._id);
       const response = await api.get(`/resume-versions/${resume._id}/generate`, {
         responseType: 'blob'
       });
+
+      console.log('PDF response received:', response);
+      console.log('Response data type:', response.data instanceof Blob);
+      console.log('Response data size:', response.data.size);
+
+      // Check if response is actually a blob
+      if (!(response.data instanceof Blob)) {
+        throw new Error('Invalid response format - expected Blob');
+      }
+
+      if (response.data.size === 0) {
+        throw new Error('PDF file is empty');
+      }
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -21,15 +35,20 @@ const ResumeCard = ({ resume, onEdit, onDelete }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      alert('Failed to generate PDF');
+      
+      console.log('PDF download triggered successfully');
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      console.error('Error response:', err.response);
+      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to generate PDF';
+      alert(`Failed to generate PDF: ${errorMessage}`);
     } finally {
       setGenerating(false);
     }
   };
 
   const enabledSections = Object.entries(resume.sectionsEnabled)
-    .filter(([_, enabled]) => enabled)
+    .filter(([, enabled]) => enabled)
     .map(([section]) => section);
 
   return (

@@ -343,10 +343,11 @@ const downloadResumePDF = async (req, res) => {
       });
     }
 
-    // Generate PDF
+    // Generate PDF (skip auth check for admin)
     const { pdfBuffer, fileName } = await pdfService.generateResumePDF(
       req.params.resumeId,
-      resumeVersion.studentId
+      resumeVersion.studentId,
+      true  // skipAuthCheck = true for admin
     );
 
     // Set response headers

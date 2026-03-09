@@ -26,7 +26,7 @@ export const isValidEmail = (email) => {
 // Phone validation (basic)
 export const isValidPhone = (phone) => {
   if (!phone || phone.trim() === '') return true; // Empty is valid (optional)
-  return /^[0-9]{10,15}$/.test(phone.replace(/[\s\-\(\)]/g, ''));
+  return /^[0-9]{10,15}$/.test(phone.replace(/[\s\-()]/g, ''));
 };
 
 // Year validation

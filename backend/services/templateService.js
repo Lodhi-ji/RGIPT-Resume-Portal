@@ -37,14 +37,7 @@ class TemplateService {
     ).join('\n        ');
   }
 
-  // Render skills for template2 (sidebar items)
-  renderSkillsSidebar(skills) {
-    return skills.map(skill => 
-      `<div class="skill-item">${skill}</div>`
-    ).join('\n        ');
-  }
-
-  // Render skills for template3 (text)
+  // Render skills for text format
   renderSkillsText(skills) {
     return skills.join(' • ');
   }
@@ -75,51 +68,9 @@ class TemplateService {
           `<ul>${project.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
       </div>`;
       }).join('\n      ');
-    } else if (template === 'template2') {
-      return projects.map(project => {
-        const techStr = typeof project.technologies === 'string' 
-          ? project.technologies 
-          : (Array.isArray(project.technologies) ? project.technologies.join(', ') : '');
-        
-        let linksHtml = '';
-        if (project.githubLink) linksHtml += `<a href="${project.githubLink}" target="_blank"><i class="fab fa-github"></i></a> `;
-        if (project.liveLink) linksHtml += `<a href="${project.liveLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>`;
-        
-        return `
-      <div class="experience-item">
-        <div class="experience-header">
-          <div>
-            <div class="experience-title">${project.title} ${linksHtml}</div>
-            ${project.description ? `<div class="experience-company">${project.description}</div>` : ''}
-          </div>
-          ${project.startDate ? `<div class="experience-date">${formatDateRange(project.startDate, project.endDate)}</div>` : ''}
-        </div>
-        ${techStr ? `<div class="technologies"><strong>Tech Stack:</strong> ${techStr}</div>` : ''}
-        ${project.bullets && project.bullets.length > 0 ? 
-          `<ul>${project.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
-      </div>`;
-      }).join('\n      ');
-    } else { // template3
-      return projects.map(project => {
-        const techStr = typeof project.technologies === 'string' 
-          ? project.technologies 
-          : (Array.isArray(project.technologies) ? project.technologies.join(', ') : '');
-        
-        let linksHtml = '';
-        if (project.githubLink) linksHtml += `<a href="${project.githubLink}" target="_blank"><i class="fab fa-github"></i></a> `;
-        if (project.liveLink) linksHtml += `<a href="${project.liveLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>`;
-        
-        return `
-      <div class="content-item">
-        <div class="item-title">${project.title} ${linksHtml}</div>
-        ${project.startDate ? `<div class="item-meta">${formatDateRange(project.startDate, project.endDate)}</div>` : ''}
-        ${project.description ? `<div class="item-description">${project.description}</div>` : ''}
-        ${techStr ? `<div class="technologies">${techStr}</div>` : ''}
-        ${project.bullets && project.bullets.length > 0 ? 
-          `<ul>${project.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
-      </div>`;
-      }).join('\n      ');
     }
+    // template4 uses different rendering (handled in replacePlaceholders)
+    return '';
   }
 
   // Render internships
@@ -136,62 +87,32 @@ class TemplateService {
         </div>
         ${internship.description ? `<div class="item-description">${internship.description}</div>` : ''}
       </div>`).join('\n      ');
-    } else if (template === 'template2') {
-      return internships.map(internship => `
-      <div class="experience-item">
-        <div class="experience-header">
-          <div>
-            <div class="experience-title">${internship.role}</div>
-            <div class="experience-company">${internship.company}${internship.location ? ` • ${internship.location}` : ''}</div>
-          </div>
-          ${internship.startDate ? `<div class="experience-date">${formatDateRange(internship.startDate, internship.endDate)}</div>` : ''}
-        </div>
-        ${internship.description ? `<div class="experience-description">${internship.description}</div>` : ''}
-      </div>`).join('\n      ');
-    } else { // template3
-      return internships.map(internship => `
-      <div class="content-item">
-        <div class="item-title">${internship.role}</div>
-        <div class="item-subtitle">${internship.company}${internship.location ? ` • ${internship.location}` : ''}</div>
-        ${internship.startDate ? `<div class="item-meta">${formatDateRange(internship.startDate, internship.endDate)}</div>` : ''}
-        ${internship.description ? `<div class="item-description">${internship.description}</div>` : ''}
-      </div>`).join('\n      ');
     }
+    // template4 uses different rendering (handled in replacePlaceholders)
+    return '';
   }
 
   // Render achievements
   renderAchievements(achievements, template) {
-    if (template === 'template2') {
-      return achievements.map(achievement => 
-        `<div class="achievement-item">${achievement}</div>`
-      ).join('\n        ');
-    } else { // template1 and template3
-      return achievements.map(achievement => 
-        `<li>${achievement}</li>`
-      ).join('\n          ');
-    }
+    // template1 uses list format
+    return achievements.map(achievement => 
+      `<li>${achievement}</li>`
+    ).join('\n          ');
   }
 
   // Render certifications
   renderCertifications(certifications, template) {
-    if (template === 'template1' || template === 'template2') {
+    if (template === 'template1') {
       return certifications.map(cert => {
         let text = cert.name;
         if (cert.issuer) text += ` - ${cert.issuer}`;
         if (cert.issueDate) text += ` (${formatDate(cert.issueDate)})`;
         if (cert.certLink) text += ` <a href="${cert.certLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>`;
-        return template === 'template2' ? 
-          `<div class="certification-item">${text}</div>` :
-          `<li>${text}</li>`;
+        return `<li>${text}</li>`;
       }).join('\n          ');
-    } else { // template3
-      return certifications.map(cert => `
-      <div class="content-item">
-        <div class="item-title">${cert.name}${cert.certLink ? ` <a href="${cert.certLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>` : ''}</div>
-        ${cert.issuer ? `<div class="item-subtitle">${cert.issuer}</div>` : ''}
-        ${cert.issueDate ? `<div class="item-meta">${formatDate(cert.issueDate)}</div>` : ''}
-      </div>`).join('\n      ');
     }
+    // template4 uses different rendering (handled in replacePlaceholders)
+    return '';
   }
 
   // Render positions of responsibility
@@ -208,48 +129,23 @@ class TemplateService {
         </div>
         ${pos.description ? `<div class="item-description">${pos.description}</div>` : ''}
       </div>`).join('\n      ');
-    } else if (template === 'template2') {
-      return positions.map(pos => `
-      <div class="experience-item">
-        <div class="experience-header">
-          <div>
-            <div class="experience-title">${pos.title}</div>
-            ${pos.organization ? `<div class="experience-company">${pos.organization}</div>` : ''}
-          </div>
-          ${pos.startDate ? `<div class="experience-date">${formatDateRange(pos.startDate, pos.endDate)}</div>` : ''}
-        </div>
-        ${pos.description ? `<div class="experience-description">${pos.description}</div>` : ''}
-      </div>`).join('\n      ');
-    } else { // template3
-      return positions.map(pos => `
-      <div class="content-item">
-        <div class="item-title">${pos.title}</div>
-        ${pos.organization ? `<div class="item-subtitle">${pos.organization}</div>` : ''}
-        ${pos.startDate ? `<div class="item-meta">${formatDateRange(pos.startDate, pos.endDate)}</div>` : ''}
-        ${pos.description ? `<div class="item-description">${pos.description}</div>` : ''}
-      </div>`).join('\n      ');
     }
+    // template4 uses different rendering (handled in replacePlaceholders)
+    return '';
   }
 
   // Render courses
   renderCourses(courses, template) {
-    if (template === 'template1' || template === 'template2') {
+    if (template === 'template1') {
       return courses.map(course => {
         const parts = [course.name];
         if (course.platform) parts.push(course.platform);
         if (course.completionDate) parts.push(formatDate(course.completionDate));
-        return template === 'template2' ?
-          `<div class="experience-item"><div class="experience-title">${parts.join(' • ')}</div></div>` :
-          `<div class="experience-item"><div class="item-title">${parts.join(' • ')}</div></div>`;
+        return `<div class="experience-item"><div class="item-title">${parts.join(' • ')}</div></div>`;
       }).join('\n      ');
-    } else { // template3
-      return courses.map(course => `
-      <div class="content-item">
-        <div class="item-title">${course.name}</div>
-        ${course.platform ? `<div class="item-subtitle">${course.platform}</div>` : ''}
-        ${course.completionDate ? `<div class="item-meta">${formatDate(course.completionDate)}</div>` : ''}
-      </div>`).join('\n      ');
     }
+    // template4 uses different rendering (handled in replacePlaceholders)
+    return '';
   }
 
   // Render social links
@@ -273,24 +169,15 @@ class TemplateService {
       if (socialLinks.portfolio) links.push({ name: 'Portfolio', url: socialLinks.portfolio, icon: iconMap.portfolio });
     }
 
-    if (template === 'template1') {
-      return links.map(link => 
-        `<a href="${link.url}" class="social-link" target="_blank"><i class="${link.icon}"></i> ${link.name}</a>`
-      ).join('\n        ');
-    } else if (template === 'template2') {
-      return links.map(link => 
-        `<a href="${link.url}" class="social-link" target="_blank"><i class="${link.icon}"></i> ${link.name}</a>`
-      ).join('\n        ');
-    } else { // template3
-      return links.map(link => 
-        `<a href="${link.url}" class="social-link" target="_blank"><i class="${link.icon}"></i> ${link.name}</a>`
-      ).join(' • ');
-    }
+    // template1 format
+    return links.map(link => 
+      `<a href="${link.url}" class="social-link" target="_blank"><i class="${link.icon}"></i> ${link.name}</a>`
+    ).join('\n        ');
   }
 
   // Render publications (NEW)
   renderPublications(publications, template) {
-    if (template === 'template1' || template === 'template2') {
+    if (template === 'template1') {
       return publications.map(pub => {
         let html = `<li><strong>${pub.title}</strong>`;
         if (pub.journal) html += ` - <em>${pub.journal}</em>`;
@@ -299,15 +186,9 @@ class TemplateService {
         html += '</li>';
         return html;
       }).join('\n          ');
-    } else { // template3
-      return publications.map(pub => `
-      <div class="content-item">
-        <div class="item-title">${pub.title}${pub.paperLink ? ` <a href="${pub.paperLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>` : ''}</div>
-        ${pub.journal ? `<div class="item-subtitle">${pub.journal}</div>` : ''}
-        ${pub.year ? `<div class="item-meta">${pub.year}</div>` : ''}
-        ${pub.description ? `<div class="item-description">${pub.description}</div>` : ''}
-      </div>`).join('\n      ');
     }
+    // template4 uses different rendering (handled in replacePlaceholders)
+    return '';
   }
 
   // Replace placeholders in template
@@ -392,7 +273,6 @@ class TemplateService {
     // Replace content placeholders
     if (data.skills && data.skills.length > 0) {
       html = html.replace(/{{skillsList}}/g, this.renderSkillsTags(data.skills));
-      html = html.replace(/{{skillsListSidebar}}/g, this.renderSkillsSidebar(data.skills));
       html = html.replace(/{{skillsText}}/g, this.renderSkillsText(data.skills));
     }
 
@@ -427,7 +307,6 @@ class TemplateService {
     // Use the hasSocialLinks variable already declared above
     if (hasSocialLinks) {
       html = html.replace(/{{socialLinksList}}/g, this.renderSocialLinks(data.socialLinks, templateName));
-      html = html.replace(/{{socialLinksListSidebar}}/g, this.renderSocialLinks(data.socialLinks, templateName));
       html = html.replace(/{{socialLinksText}}/g, this.renderSocialLinks(data.socialLinks, templateName));
     }
 

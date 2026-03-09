@@ -21,7 +21,6 @@ const ProfileForm = ({ profile, onUpdate }) => {
   const [newAchievement, setNewAchievement] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -218,7 +217,6 @@ const ProfileForm = ({ profile, onUpdate }) => {
     
     // Validate form
     const validationErrors = validateProfileForm(formData);
-    setErrors(validationErrors);
     
     if (Object.keys(validationErrors).length > 0) {
       setMessage(getErrorMessage(validationErrors));
@@ -232,19 +230,14 @@ const ProfileForm = ({ profile, onUpdate }) => {
       const response = await api.put('/students/profile', formData);
       onUpdate(response.data.profile);
       setMessage('Profile updated successfully!');
-      setErrors({});
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       const errorMsg = error.response?.data?.error?.message || 'Failed to update profile';
       setMessage(errorMsg);
       
-      // Handle backend validation errors
+      // Handle backend validation errors (logged for debugging)
       if (error.response?.data?.error?.details) {
-        const backendErrors = {};
-        error.response.data.error.details.forEach(err => {
-          backendErrors[err.param] = err.msg;
-        });
-        setErrors(backendErrors);
+        console.error('Validation errors:', error.response.data.error.details);
       }
     } finally {
       setSaving(false);

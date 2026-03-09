@@ -50,7 +50,7 @@ const ResumePage = () => {
     try {
       await api.delete(`/resume-versions/${resumeId}`);
       setResumes(resumes.filter(r => r._id !== resumeId));
-    } catch (error) {
+    } catch {
       alert('Failed to delete resume');
     }
   };

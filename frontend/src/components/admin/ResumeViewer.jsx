@@ -39,9 +39,23 @@ const ResumeViewer = () => {
 
   const handleDownload = async (resumeId) => {
     try {
+      console.log('Admin downloading PDF for resume:', resumeId);
       const response = await api.get(`/admin/resumes/${resumeId}/download`, {
         responseType: 'blob'
       });
+      
+      console.log('PDF response received:', response);
+      console.log('Response data type:', response.data instanceof Blob);
+      console.log('Response data size:', response.data.size);
+
+      // Check if response is actually a blob
+      if (!(response.data instanceof Blob)) {
+        throw new Error('Invalid response format - expected Blob');
+      }
+
+      if (response.data.size === 0) {
+        throw new Error('PDF file is empty');
+      }
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -50,9 +64,14 @@ const ResumeViewer = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      console.log('PDF download triggered successfully');
     } catch (error) {
       console.error('Error downloading resume:', error);
-      alert('Failed to download resume');
+      console.error('Error response:', error.response);
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Failed to download resume';
+      alert(`Failed to download resume: ${errorMessage}`);
     }
   };
 

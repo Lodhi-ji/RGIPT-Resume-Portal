@@ -584,7 +584,7 @@ const seedData = async () => {
       {
         studentId: students[2]._id, // Ritik Lodhi
         name: 'Software Developer Resume',
-        template: 'template2',
+        template: 'template4',
         sectionsEnabled: {
           education: true,
           projects: true,

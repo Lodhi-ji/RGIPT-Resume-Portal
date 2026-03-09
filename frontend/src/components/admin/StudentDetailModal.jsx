@@ -46,9 +46,20 @@ const StudentDetailModal = ({ student, onClose }) => {
 
   const handleDownload = async (resumeId) => {
     try {
+      console.log('Downloading resume from student detail modal:', resumeId);
       const response = await api.get(`/admin/resumes/${resumeId}/download`, {
         responseType: 'blob'
       });
+
+      console.log('PDF response received:', response);
+      
+      if (!(response.data instanceof Blob)) {
+        throw new Error('Invalid response format');
+      }
+
+      if (response.data.size === 0) {
+        throw new Error('PDF file is empty');
+      }
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -57,9 +68,13 @@ const StudentDetailModal = ({ student, onClose }) => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      console.log('PDF download triggered successfully');
     } catch (error) {
       console.error('Error downloading resume:', error);
-      alert('Failed to download resume');
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Failed to download resume';
+      alert(`Failed to download resume: ${errorMessage}`);
     }
   };
 
