@@ -4,3 +4,9 @@ node_modules/
 .DS_Store
 uploads/
 *.pdf
+*.xlsx
+~$*
+test-*.js
+check-resumes.js
+migrate-templates.js
+rename-template4-to-template2.js
