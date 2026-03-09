@@ -82,15 +82,39 @@ const uploadStudents = async (req, res) => {
 const getAllStudents = async (req, res) => {
   try {
     const Student = require('../models/Student');
+    const ResumeVersion = require('../models/ResumeVersion');
     
     const students = await Student.find({ role: 'student' })
       .select('-password')
       .sort({ createdAt: -1 });
 
+    // Get resume counts for all students
+    const resumeCounts = await ResumeVersion.aggregate([
+      {
+        $group: {
+          _id: '$studentId',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Create a map of studentId -> resumeCount
+    const resumeCountMap = {};
+    resumeCounts.forEach(item => {
+      resumeCountMap[item._id.toString()] = item.count;
+    });
+
+    // Add resumeCount to each student
+    const studentsWithCounts = students.map(student => {
+      const studentObj = student.toObject();
+      studentObj.resumeCount = resumeCountMap[student._id.toString()] || 0;
+      return studentObj;
+    });
+
     res.status(200).json({
       success: true,
-      count: students.length,
-      students
+      count: studentsWithCounts.length,
+      students: studentsWithCounts
     });
   } catch (error) {
     console.error('Get all students error:', error);
