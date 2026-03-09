@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
-import '../../styles/ResumeBuilder.css';
 
 const ResumeBuilder = ({ resume, profile, onClose }) => {
+  const [activeTab, setActiveTab] = useState('basic');
   const [formData, setFormData] = useState({
     name: '',
     template: 'template1',
@@ -29,28 +29,6 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
   const [previewHTML, setPreviewHTML] = useState('');
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const debounceTimerRef = useRef(null);
-
-  // Safety check for profile
-  if (!profile) {
-    return (
-      <div className="modal-overlay">
-        <div className="resume-builder-split">
-          <div className="builder-controls">
-            <div className="builder-header">
-              <h2>Error</h2>
-              <button className="close-btn" onClick={onClose}>×</button>
-            </div>
-            <div style={{ padding: '24px' }}>
-              <p>Profile data is not available. Please complete your profile first.</p>
-              <button onClick={onClose} className="save-btn" style={{ marginTop: '16px' }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   useEffect(() => {
     if (resume) {
@@ -219,7 +197,7 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError('Failed to download PDF');
     }
   };
@@ -245,223 +223,373 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
     }
   };
 
-  return (
-    <div className="modal-overlay">
-      <div className="resume-builder-split">
-        {/* Left Panel - Controls */}
-        <div className="builder-controls">
-          <div className="builder-header">
-            <h2>{resume ? 'Edit Resume' : 'Create New Resume'}</h2>
-            <button className="close-btn" onClick={onClose}>×</button>
+  // Safety check for profile - render error state if profile is missing
+  if (!profile) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">Error</h2>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
+            >
+              ×
+            </button>
           </div>
+          <div className="mb-6">
+            <p className="text-gray-700">Profile data is not available. Please complete your profile first.</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md transition-colors duration-200"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-          <form onSubmit={handleSubmit} className="builder-form">
-            {error && <div className="error-message">{error}</div>}
-
-            {/* Basic Info */}
-            <div className="form-section">
-              <h3>Basic Information</h3>
-              <div className="form-group">
-                <label>Resume Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="e.g., Software Developer Resume"
-                  required
-                />
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-hidden">
+      <div className="bg-gray-50 w-full h-full flex flex-col">
+        {/* Fixed Toolbar */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  {resume ? 'Edit Resume' : 'Create New Resume'}
+                </h1>
               </div>
-
-              <div className="form-group">
-                <label>Template</label>
-                <select name="template" value={formData.template} onChange={handleChange}>
-                  <option value="template1">Template 1 - Modern</option>
-                  <option value="template2">Template 2 - Sidebar</option>
-                  <option value="template3">Template 3 - Minimal</option>
-                  <option value="template4">Template 4 - LaTeX (RGIPT)</option>
-                </select>
+              <div className="flex gap-3">
+                <button 
+                  type="button"
+                  onClick={handleRefreshPreview}
+                  disabled={isLoadingPreview}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingPreview ? '⟳ Loading...' : '⟳ Preview'}
+                </button>
+                <button 
+                  type="submit"
+                  form="resume-form"
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Saving...' : resume ? 'Update' : 'Save'}
+                </button>
+                {resume && (
+                  <button 
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md transition-colors duration-200"
+                  >
+                    ⬇ Download PDF
+                  </button>
+                )}
               </div>
             </div>
-
-            {/* Sections */}
-            <div className="form-section">
-              <h3>Enable/Disable Sections</h3>
-              <div className="sections-grid">
-                {Object.keys(formData.sectionsEnabled).map((section) => (
-                  <label key={section} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.sectionsEnabled[section]}
-                      onChange={() => handleSectionToggle(section)}
-                    />
-                    <span>{formatSectionName(section)}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Projects Selection */}
-            {profile?.projects && profile.projects.length > 0 && (
-              <div className="form-section">
-                <h3>Select Projects</h3>
-                <div className="items-list">
-                  {profile.projects.map((project) => (
-                    <label key={project._id} className="item-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedProjects.includes(project._id.toString())}
-                        onChange={() => handleProjectToggle(project._id.toString())}
-                      />
-                      <div className="item-info">
-                        <strong>{project.title}</strong>
-                        <small>{typeof project.technologies === 'string' ? project.technologies : project.technologies?.join(', ')}</small>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Internships Selection */}
-            {profile?.internships && profile.internships.length > 0 && (
-              <div className="form-section">
-                <h3>Select Internships</h3>
-                <div className="items-list">
-                  {profile.internships.map((internship) => (
-                    <label key={internship._id} className="item-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedInternships.includes(internship._id.toString())}
-                        onChange={() => handleInternshipToggle(internship._id.toString())}
-                      />
-                      <div className="item-info">
-                        <strong>{internship.role}</strong>
-                        <small>{internship.company}</small>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Publications Selection */}
-            {profile?.publications && profile.publications.length > 0 && (
-              <div className="form-section">
-                <h3>Select Publications</h3>
-                <div className="items-list">
-                  {profile.publications.map((publication) => (
-                    <label key={publication._id} className="item-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedPublications.includes(publication._id.toString())}
-                        onChange={() => handlePublicationToggle(publication._id.toString())}
-                      />
-                      <div className="item-info">
-                        <strong>{publication.title}</strong>
-                        <small>{publication.journal} ({publication.year})</small>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Certifications Selection */}
-            {profile?.certifications && profile.certifications.length > 0 && (
-              <div className="form-section">
-                <h3>Select Certifications</h3>
-                <div className="items-list">
-                  {profile.certifications.map((certification) => (
-                    <label key={certification._id} className="item-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedCertifications.includes(certification._id.toString())}
-                        onChange={() => handleCertificationToggle(certification._id.toString())}
-                      />
-                      <div className="item-info">
-                        <strong>{certification.name}</strong>
-                        <small>{certification.issuer}</small>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Social Links Selection */}
-            {profile?.socialLinks && Array.isArray(profile.socialLinks) && profile.socialLinks.length > 0 && (
-              <div className="form-section">
-                <h3>Select Social Links</h3>
-                <div className="items-list">
-                  {profile.socialLinks.map((link) => (
-                    <label key={link._id} className="item-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedSocialLinks.includes(link._id.toString())}
-                        onChange={() => handleSocialLinkToggle(link._id.toString())}
-                      />
-                      <div className="item-info">
-                        <strong>{link.title}</strong>
-                        <small>{link.url}</small>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="form-actions">
-              <button type="button" className="cancel-btn" onClick={onClose}>
-                Cancel
-              </button>
-              <button type="submit" className="save-btn" disabled={saving}>
-                {saving ? 'Saving...' : resume ? 'Update Resume' : 'Create Resume'}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
 
-        {/* Right Panel - Live Preview */}
-        <div className="builder-preview">
-          <div className="preview-toolbar">
-            <h3>Live Preview</h3>
-            <div className="preview-actions">
-              <button 
-                type="button" 
-                className="refresh-btn" 
-                onClick={handleRefreshPreview}
-                disabled={isLoadingPreview}
-              >
-                {isLoadingPreview ? '⟳ Loading...' : '⟳ Refresh'}
-              </button>
-              {resume && (
-                <button 
-                  type="button" 
-                  className="download-btn" 
-                  onClick={handleDownloadPDF}
-                >
-                  ⬇ Download PDF
-                </button>
-              )}
+        {/* Success/Error Messages */}
+        {error && (
+          <div className="max-w-7xl mx-auto px-4 pt-4 w-full">
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md">
+              <p className="text-sm text-red-800">{error}</p>
             </div>
           </div>
-          <div className="preview-container">
-            {isLoadingPreview && <div className="preview-loading">Generating preview...</div>}
-            {!resume && !previewHTML && (
-              <div className="preview-placeholder">
-                Save the resume first to see live preview
+        )}
+
+        {/* Two-Panel Layout */}
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              
+              {/* Left Panel: Editor */}
+              <div className="space-y-6">
+                <form id="resume-form" onSubmit={handleSubmit} className="space-y-6">
+                  
+                  {/* Basic Information Section */}
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Basic Information
+                    </h2>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Resume Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="e.g., Software Developer Resume"
+                          required
+                          className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Template Selection Section */}
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Choose Template
+                    </h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { value: 'template1', name: 'Modern' },
+                        { value: 'template2', name: 'Sidebar' },
+                        { value: 'template3', name: 'Minimal' },
+                        { value: 'template4', name: 'LaTeX (RGIPT)' }
+                      ].map((template) => (
+                        <button
+                          key={template.value}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, template: template.value })}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            formData.template === template.value
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="aspect-[8.5/11] bg-gray-100 rounded mb-2 flex items-center justify-center">
+                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900 text-center">
+                            {template.name}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tabbed Content Sections */}
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      Resume Content
+                    </h2>
+                    
+                    {/* Section Tabs */}
+                    <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200">
+                      {[
+                        { id: 'basic', label: 'Sections' },
+                        { id: 'projects', label: 'Projects' },
+                        { id: 'internships', label: 'Internships' },
+                        { id: 'publications', label: 'Publications' },
+                        { id: 'certifications', label: 'Certifications' },
+                        { id: 'social', label: 'Social Links' }
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors ${
+                            activeTab === tab.id
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="space-y-4">
+                      {/* Sections Tab */}
+                      {activeTab === 'basic' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {Object.keys(formData.sectionsEnabled).map((section) => (
+                            <label key={section} className="flex items-center gap-2 p-3 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={formData.sectionsEnabled[section]}
+                                onChange={() => handleSectionToggle(section)}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-medium text-gray-700">
+                                {formatSectionName(section)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Projects Tab */}
+                      {activeTab === 'projects' && (
+                        <div className="space-y-3">
+                          {profile?.projects && profile.projects.length > 0 ? (
+                            profile.projects.map((project) => (
+                              <label key={project._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedProjects.includes(project._id.toString())}
+                                  onChange={() => handleProjectToggle(project._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{project.title}</p>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {typeof project.technologies === 'string' ? project.technologies : project.technologies?.join(', ')}
+                                  </p>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No projects available. Add projects to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Internships Tab */}
+                      {activeTab === 'internships' && (
+                        <div className="space-y-3">
+                          {profile?.internships && profile.internships.length > 0 ? (
+                            profile.internships.map((internship) => (
+                              <label key={internship._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedInternships.includes(internship._id.toString())}
+                                  onChange={() => handleInternshipToggle(internship._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{internship.role}</p>
+                                  <p className="text-sm text-gray-600 mt-1">{internship.company}</p>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No internships available. Add internships to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Publications Tab */}
+                      {activeTab === 'publications' && (
+                        <div className="space-y-3">
+                          {profile?.publications && profile.publications.length > 0 ? (
+                            profile.publications.map((publication) => (
+                              <label key={publication._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedPublications.includes(publication._id.toString())}
+                                  onChange={() => handlePublicationToggle(publication._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{publication.title}</p>
+                                  <p className="text-sm text-gray-600 mt-1">{publication.journal} ({publication.year})</p>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No publications available. Add publications to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Certifications Tab */}
+                      {activeTab === 'certifications' && (
+                        <div className="space-y-3">
+                          {profile?.certifications && profile.certifications.length > 0 ? (
+                            profile.certifications.map((certification) => (
+                              <label key={certification._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedCertifications.includes(certification._id.toString())}
+                                  onChange={() => handleCertificationToggle(certification._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{certification.name}</p>
+                                  <p className="text-sm text-gray-600 mt-1">{certification.issuer}</p>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No certifications available. Add certifications to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Social Links Tab */}
+                      {activeTab === 'social' && (
+                        <div className="space-y-3">
+                          {profile?.socialLinks && Array.isArray(profile.socialLinks) && profile.socialLinks.length > 0 ? (
+                            profile.socialLinks.map((link) => (
+                              <label key={link._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedSocialLinks.includes(link._id.toString())}
+                                  onChange={() => handleSocialLinkToggle(link._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{link.title}</p>
+                                  <p className="text-sm text-gray-600 mt-1 break-all">{link.url}</p>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No social links available. Add social links to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </form>
               </div>
-            )}
-            {previewHTML && (
-              <iframe
-                className="resume-preview-iframe"
-                srcDoc={previewHTML}
-                title="Resume Preview"
-                sandbox="allow-same-origin"
-                scrolling="yes"
-              />
-            )}
+
+              {/* Right Panel: Live Preview */}
+              <div className="lg:sticky lg:top-24 lg:self-start">
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Live Preview
+                    </h2>
+                    {isLoadingPreview && (
+                      <span className="text-sm text-blue-600 font-medium">Updating...</span>
+                    )}
+                  </div>
+                  <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                    {!resume && !previewHTML && (
+                      <div className="aspect-[8.5/11] flex items-center justify-center p-8">
+                        <div className="text-center">
+                          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <p className="text-gray-500 text-sm">Save the resume first to see live preview</p>
+                        </div>
+                      </div>
+                    )}
+                    {previewHTML && (
+                      <iframe
+                        className="w-full aspect-[8.5/11] bg-white"
+                        srcDoc={previewHTML}
+                        title="Resume Preview"
+                        sandbox="allow-same-origin"
+                        scrolling="yes"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
