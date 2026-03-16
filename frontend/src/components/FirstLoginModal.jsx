@@ -222,6 +222,21 @@ const FirstLoginModal = ({ isOpen, onClose, onPasswordChanged }) => {
               </div>
             )}
             
+            <ul style={{ listStyle: 'none', padding: '6px 0 0', margin: 0, fontSize: '0.8rem' }}>
+              {[
+                { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+                { label: 'One uppercase letter (A-Z)', test: (p) => /[A-Z]/.test(p) },
+                { label: 'One lowercase letter (a-z)', test: (p) => /[a-z]/.test(p) },
+                { label: 'One number (0-9)', test: (p) => /\d/.test(p) },
+              ].map((rule, i) => {
+                const passed = rule.test(formData.newPassword);
+                return (
+                  <li key={i} style={{ color: passed ? '#16a34a' : '#6b7280', marginBottom: '2px' }}>
+                    {passed ? '✓' : '○'} {rule.label}
+                  </li>
+                );
+              })}
+            </ul>
             <small>Must be at least 8 characters long</small>
           </div>
 

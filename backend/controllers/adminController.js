@@ -307,7 +307,9 @@ const getResumePreview = async (req, res) => {
       alternateEmail: profile.alternateEmail,
       degree: student.degree,
       branch: student.branch,
+      graduationYear: student.graduationYear,
       cpi: student.cpi,
+      cgpaRemark: student.cgpaRemark,
       class10Percentage: student.class10.percentage,
       class10School: student.class10.school,
       class12Percentage: student.class12.percentage,
@@ -319,6 +321,7 @@ const getResumePreview = async (req, res) => {
       certifications: selectedCertifications,
       achievements: profile.achievements,
       positionsOfResponsibility: profile.positionsOfResponsibility,
+      extracurricular: profile.extracurricular,
       courses: profile.courses,
       socialLinks: selectedSocialLinks
     };

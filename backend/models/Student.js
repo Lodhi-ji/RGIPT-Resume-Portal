@@ -35,6 +35,14 @@ const studentSchema = new mongoose.Schema({
     min: 0,
     max: 10
   },
+  cgpaRemark: {
+    type: String,
+    trim: true
+  },
+  graduationYear: {
+    type: String,
+    trim: true
+  },
   class10: {
     percentage: {
       type: Number,

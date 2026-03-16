@@ -16,14 +16,17 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       certifications: true,
       positionsOfResponsibility: true,
       courses: true,
-      socialLinks: true,
       publications: true,
+      extracurricular: true,
     },
     selectedProjects: [],
     selectedInternships: [],
     selectedPublications: [],
     selectedCertifications: [],
     selectedSocialLinks: [],
+    selectedAchievements: [],
+    selectedCourses: [],
+    selectedPositionsOfResponsibility: [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -45,14 +48,17 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
           certifications: resume.sectionsEnabled?.certifications ?? true,
           positionsOfResponsibility: resume.sectionsEnabled?.positionsOfResponsibility ?? true,
           courses: resume.sectionsEnabled?.courses ?? true,
-          socialLinks: resume.sectionsEnabled?.socialLinks ?? true,
           publications: resume.sectionsEnabled?.publications ?? true,
+          extracurricular: resume.sectionsEnabled?.extracurricular ?? true,
         },
         selectedProjects: resume.selectedProjects?.map(id => id.toString()) || [],
         selectedInternships: resume.selectedInternships?.map(id => id.toString()) || [],
         selectedPublications: resume.selectedPublications?.map(id => id.toString()) || [],
         selectedCertifications: resume.selectedCertifications?.map(id => id.toString()) || [],
         selectedSocialLinks: resume.selectedSocialLinks?.map(id => id.toString()) || [],
+        selectedAchievements: resume.selectedAchievements || [],
+        selectedCourses: resume.selectedCourses?.map(id => id.toString()) || [],
+        selectedPositionsOfResponsibility: resume.selectedPositionsOfResponsibility?.map(id => id.toString()) || [],
       });
     }
   }, [resume]);
@@ -173,6 +179,36 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       selectedSocialLinks: selected
         ? formData.selectedSocialLinks.filter(id => id !== socialLinkId)
         : [...formData.selectedSocialLinks, socialLinkId],
+    });
+  };
+
+  const handleAchievementToggle = (index) => {
+    const selected = formData.selectedAchievements.includes(index);
+    setFormData({
+      ...formData,
+      selectedAchievements: selected
+        ? formData.selectedAchievements.filter(i => i !== index)
+        : [...formData.selectedAchievements, index],
+    });
+  };
+
+  const handleCourseToggle = (courseId) => {
+    const selected = formData.selectedCourses.includes(courseId);
+    setFormData({
+      ...formData,
+      selectedCourses: selected
+        ? formData.selectedCourses.filter(id => id !== courseId)
+        : [...formData.selectedCourses, courseId],
+    });
+  };
+
+  const handlePositionToggle = (positionId) => {
+    const selected = formData.selectedPositionsOfResponsibility.includes(positionId);
+    setFormData({
+      ...formData,
+      selectedPositionsOfResponsibility: selected
+        ? formData.selectedPositionsOfResponsibility.filter(id => id !== positionId)
+        : [...formData.selectedPositionsOfResponsibility, positionId],
     });
   };
 
@@ -405,6 +441,9 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                         { id: 'internships', label: 'Internships' },
                         { id: 'publications', label: 'Publications' },
                         { id: 'certifications', label: 'Certifications' },
+                        { id: 'achievements', label: 'Achievements' },
+                        { id: 'courses', label: 'Courses' },
+                        { id: 'positions', label: 'Positions' },
                         { id: 'social', label: 'Social Links' }
                       ].map((tab) => (
                         <button
@@ -537,6 +576,75 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                             ))
                           ) : (
                             <p className="text-sm text-gray-500 text-center py-8">No certifications available. Add certifications to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Achievements Tab */}
+                      {activeTab === 'achievements' && (
+                        <div className="space-y-3">
+                          {profile?.achievements && profile.achievements.length > 0 ? (
+                            profile.achievements.map((achievement, index) => (
+                              <label key={index} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedAchievements.includes(index)}
+                                  onChange={() => handleAchievementToggle(index)}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <p className="flex-1 text-sm text-gray-900">{achievement}</p>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No achievements available. Add achievements to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Courses Tab */}
+                      {activeTab === 'courses' && (
+                        <div className="space-y-3">
+                          {profile?.courses && profile.courses.length > 0 ? (
+                            profile.courses.map((course) => (
+                              <label key={course._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedCourses.includes(course._id.toString())}
+                                  onChange={() => handleCourseToggle(course._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{course.name}</p>
+                                  {course.platform && <p className="text-sm text-gray-600 mt-1">{course.platform}</p>}
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No courses available. Add courses to your profile first.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Positions of Responsibility Tab */}
+                      {activeTab === 'positions' && (
+                        <div className="space-y-3">
+                          {profile?.positionsOfResponsibility && profile.positionsOfResponsibility.length > 0 ? (
+                            profile.positionsOfResponsibility.map((position) => (
+                              <label key={position._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.selectedPositionsOfResponsibility.includes(position._id.toString())}
+                                  onChange={() => handlePositionToggle(position._id.toString())}
+                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{position.title}</p>
+                                  {position.organization && <p className="text-sm text-gray-600 mt-1">{position.organization}</p>}
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-8">No positions available. Add positions of responsibility to your profile first.</p>
                           )}
                         </div>
                       )}

@@ -31,7 +31,9 @@ const getMe = async (req, res) => {
         instituteEmail: student.instituteEmail,
         branch: student.branch,
         degree: student.degree,
+        graduationYear: student.graduationYear,
         cpi: student.cpi,
+        cgpaRemark: student.cgpaRemark,
         class10: student.class10,
         class12: student.class12,
         isFirstLogin: student.isFirstLogin,
@@ -99,7 +101,8 @@ const updateProfile = async (req, res) => {
       certifications,
       positionsOfResponsibility,
       courses,
-      socialLinks
+      socialLinks,
+      extracurricular
     } = req.body;
 
     // Find profile
@@ -118,7 +121,8 @@ const updateProfile = async (req, res) => {
         certifications: certifications || [],
         positionsOfResponsibility: positionsOfResponsibility || [],
         courses: courses || [],
-        socialLinks: socialLinks || {}
+        socialLinks: socialLinks || {},
+        extracurricular: extracurricular || []
       });
     } else {
       // Update existing profile
@@ -132,6 +136,7 @@ const updateProfile = async (req, res) => {
       profile.positionsOfResponsibility = positionsOfResponsibility !== undefined ? positionsOfResponsibility : profile.positionsOfResponsibility;
       profile.courses = courses !== undefined ? courses : profile.courses;
       profile.socialLinks = socialLinks !== undefined ? socialLinks : profile.socialLinks;
+      profile.extracurricular = extracurricular !== undefined ? extracurricular : profile.extracurricular;
 
       await profile.save();
     }
@@ -158,7 +163,7 @@ const updateProfile = async (req, res) => {
 // @access  Private/Student
 const addProject = async (req, res) => {
   try {
-    const { title, description, technologies, startDate, endDate, link } = req.body;
+    const { title, description, technologies, startDate, endDate, link, supervisor, githubLink, liveLink, bullets } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -188,7 +193,11 @@ const addProject = async (req, res) => {
       technologies: technologies || [],
       startDate,
       endDate,
-      link
+      link,
+      supervisor,
+      githubLink,
+      liveLink,
+      bullets: bullets || []
     });
 
     await profile.save();
@@ -215,7 +224,7 @@ const addProject = async (req, res) => {
 // @access  Private/Student
 const addInternship = async (req, res) => {
   try {
-    const { company, role, startDate, endDate, description, location } = req.body;
+    const { company, role, startDate, endDate, description, location, certLink, bullets } = req.body;
 
     if (!company || !role) {
       return res.status(400).json({
@@ -245,7 +254,9 @@ const addInternship = async (req, res) => {
       startDate,
       endDate,
       description,
-      location
+      location,
+      certLink,
+      bullets: bullets || []
     });
 
     await profile.save();

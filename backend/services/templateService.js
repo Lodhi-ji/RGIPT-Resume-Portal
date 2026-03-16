@@ -210,8 +210,8 @@ class TemplateService {
     html = html.replace(/{{class12Percentage}}/g, data.class12Percentage || '');
     html = html.replace(/{{class12School}}/g, data.class12School || '');
 
-    // Template 2 specific replacements
-    if (templateName === 'template2') {
+    // Template 1 and Template 2 use the same layout now
+    if (templateName === 'template2' || templateName === 'template1') {
       // Load and encode logo
       const logoBase64 = await this.getLogoBase64();
       html = html.replace(/{{logoBase64}}/g, logoBase64);
@@ -234,18 +234,21 @@ class TemplateService {
       html = html.replace(/{{personalEmailHtml}}/g, data.alternateEmail ? `<div><a href="mailto:${data.alternateEmail}">${data.alternateEmail}</a></div>` : '');
       html = html.replace(/{{instituteEmailHtml}}/g, data.email ? `<div><a href="mailto:${data.email}">${data.email}</a></div>` : '');
       
-      // Replace section HTML
       html = html.replace(/{{socialLinksHtml}}/g, sectionsEnabled.socialLinks ? this.renderTemplate2SocialLinksInline(data.socialLinks) : '');
-      html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education ? this.renderTemplate2Education(data) : '');
-      html = html.replace(/{{internshipsHtml}}/g, sectionsEnabled.internships ? this.renderTemplate2Internships(data.internships) : '');
-      html = html.replace(/{{projectsHtml}}/g, sectionsEnabled.projects ? this.renderTemplate2Projects(data.projects) : '');
-      html = html.replace(/{{publicationsHtml}}/g, sectionsEnabled.publications ? this.renderTemplate2Publications(data.publications) : '');
-      html = html.replace(/{{certificationsHtml}}/g, sectionsEnabled.certifications ? this.renderTemplate2Certifications(data.certifications) : '');
-      html = html.replace(/{{skillsHtml}}/g, sectionsEnabled.skills ? this.renderTemplate2Skills(data.skills) : '');
-      html = html.replace(/{{achievementsHtml}}/g, sectionsEnabled.achievements ? this.renderTemplate2Achievements(data.achievements) : '');
-      html = html.replace(/{{positionsHtml}}/g, sectionsEnabled.positionsOfResponsibility ? this.renderTemplate2POR(data.positionsOfResponsibility) : '');
-      html = html.replace(/{{coursesHtml}}/g, sectionsEnabled.courses ? this.renderTemplate2Courses(data.courses) : '');
+      html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education !== false ? this.renderTemplate2Education(data) : '');
+      html = html.replace(/{{internshipsHtml}}/g, sectionsEnabled.internships !== false ? this.renderTemplate2Internships(data.internships) : '');
+      html = html.replace(/{{projectsHtml}}/g, sectionsEnabled.projects !== false ? this.renderTemplate2Projects(data.projects) : '');
+      html = html.replace(/{{publicationsHtml}}/g, sectionsEnabled.publications !== false ? this.renderTemplate2Publications(data.publications) : '');
+      html = html.replace(/{{certificationsHtml}}/g, sectionsEnabled.certifications !== false ? this.renderTemplate2Certifications(data.certifications) : '');
+      html = html.replace(/{{skillsHtml}}/g, sectionsEnabled.skills !== false ? this.renderTemplate2Skills(data.skills) : '');
+      html = html.replace(/{{achievementsHtml}}/g, sectionsEnabled.achievements !== false ? this.renderTemplate2Achievements(data.achievements) : '');
+      html = html.replace(/{{positionsHtml}}/g, sectionsEnabled.positionsOfResponsibility !== false ? this.renderTemplate2POR(data.positionsOfResponsibility) : '');
+      html = html.replace(/{{coursesHtml}}/g, sectionsEnabled.courses !== false ? this.renderTemplate2Courses(data.courses) : '');
+      html = html.replace(/{{extracurricularHtml}}/g, sectionsEnabled.extracurricular !== false ? this.renderTemplate2Extracurricular(data.extracurricular) : '');
       
+      // Additional simple replacements
+      html = html.replace(/{{graduationYear}}/g, data.graduationYear ? '(' + data.graduationYear + ')' : '');
+
       return html;
     }
 
@@ -330,7 +333,7 @@ class TemplateService {
                 <td>${data.degree} in ${data.branch}</td>
                 <td>Rajiv Gandhi Institute of Petroleum Technology</td>
                 <td>Present</td>
-                <td>${data.cpi || 'N/A'}</td>
+                <td>${data.cpi || 'N/A'}${data.cgpaRemark ? ' (' + data.cgpaRemark + ')' : ''}</td>
             </tr>`);
     }
     
@@ -384,21 +387,31 @@ class TemplateService {
       const endDate = internship.endDate ? new Date(internship.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present';
       const duration = startDate && endDate ? `${startDate} - ${endDate}` : '';
       
+      const certIcon = internship.certLink ? `<a href="${internship.certLink}" target="_blank" class="title-icon"><i class="fas fa-link"></i></a>` : '';
+
       const description = internship.description ? `
         <ul>
             <li>${internship.description}</li>
         </ul>` : '';
       
+      const bullets = internship.bullets && internship.bullets.length > 0 ? `
+        <ul>
+            ${internship.bullets.map(bullet => `<li>${bullet}</li>`).join('\n            ')}
+        </ul>` : '';
+      
       return `
     <div class="item">
         <div class="flex-between">
-            <span class="item-title">${internship.company || ''}</span>
+            <div class="title-group">
+                <span class="item-title">${internship.company || ''}</span>
+                ${certIcon}
+            </div>
             <span class="item-subtitle">${duration}</span>
         </div>
         <div class="flex-between">
             <span class="item-subtitle">${internship.role || ''}</span>
             <span class="item-subtitle" style="font-style: normal;">${internship.location || ''}</span>
-        </div>${description}
+        </div>${description}${bullets}
     </div>`;
     }).join('');
     
@@ -419,6 +432,9 @@ class TemplateService {
       const githubIcon = project.githubLink ? `<a href="${project.githubLink}" target="_blank" class="title-icon"><i class="fab fa-github"></i></a>` : '';
       const liveIcon = project.liveLink ? `<a href="${project.liveLink}" target="_blank" class="title-icon"><i class="fas fa-external-link-alt"></i></a>` : '';
       
+      const supervisor = project.supervisor ? `
+        <div class="item-subtitle">Supervisor: ${project.supervisor}</div>` : '';
+
       const description = project.description ? `
         <div class="item-subtitle">${project.description}</div>` : '';
       
@@ -436,7 +452,7 @@ class TemplateService {
                 ${liveIcon}
             </div>
             <span class="item-subtitle">${duration}</span>
-        </div>${description}${bullets}
+        </div>${supervisor}${description}${bullets}
     </div>`;
     }).join('');
     
@@ -471,7 +487,7 @@ class TemplateService {
     if (!certifications || certifications.length === 0) return '';
     
     const items = certifications.map(cert => {
-      const certIcon = cert.certLink ? `<a href="${cert.certLink}" target="_blank" class="title-icon"><i class="fas fa-certificate"></i></a>` : '';
+      const certIcon = cert.certLink ? `<a href="${cert.certLink}" target="_blank" class="title-icon"><i class="fas fa-link"></i></a>` : '';
       
       return `
         <li>
@@ -572,6 +588,20 @@ class TemplateService {
     return `
     <div class="section-wrapper">
         <div class="section-heading">Courses</div>
+        <ul>${items}
+        </ul>
+    </div>`;
+  }
+
+  renderTemplate2Extracurricular(extracurricular) {
+    if (!extracurricular || extracurricular.length === 0) return '';
+    
+    const items = extracurricular.map(activity => `
+        <li>${activity}</li>`).join('');
+    
+    return `
+    <div class="section-wrapper">
+        <div class="section-heading">Extracurricular Activities</div>
         <ul>${items}
         </ul>
     </div>`;

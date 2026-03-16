@@ -33,7 +33,9 @@ class ExcelService {
       '10th percentage',
       '12th percentage',
       '10th school',
-      '12th school'
+      '12th school',
+      'graduationYear',
+      'semester'
     ];
 
     if (!data || data.length === 0) {
@@ -107,6 +109,16 @@ class ExcelService {
       errors.push('12th school is required');
     }
 
+    // Graduation year validation
+    if (!student.graduationYear || student.graduationYear.toString().trim() === '') {
+      errors.push('Graduation year is required');
+    }
+
+    // Semester validation
+    if (!student.semester || student.semester.toString().trim() === '') {
+      errors.push('Semester is required');
+    }
+
     if (errors.length > 0) {
       return {
         valid: false,
@@ -128,7 +140,9 @@ class ExcelService {
       instituteEmail: excelRow.instituteEmail.toLowerCase().trim(),
       branch: excelRow.branch.trim(),
       degree: excelRow.degree.trim(),
+      graduationYear: excelRow.graduationYear.toString().trim(),
       cpi: parseFloat(excelRow.cpi),
+      cgpaRemark: `till Semester ${excelRow.semester.toString().trim()}`,
       class10: {
         percentage: parseFloat(excelRow['10th percentage']),
         school: excelRow['10th school'].trim()

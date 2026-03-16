@@ -73,6 +73,15 @@ const resumeVersionSchema = new mongoose.Schema({
   }],
   selectedSocialLinks: [{
     type: mongoose.Schema.Types.ObjectId
+  }],
+  selectedAchievements: [{
+    type: Number
+  }],
+  selectedCourses: [{
+    type: mongoose.Schema.Types.ObjectId
+  }],
+  selectedPositionsOfResponsibility: [{
+    type: mongoose.Schema.Types.ObjectId
   }]
 }, {
   timestamps: true

@@ -73,7 +73,7 @@ export const validateProject = (project) => {
   
   if (project.bullets) {
     project.bullets.forEach((bullet, index) => {
-      if (!isValidLength(bullet, 10, 500)) {
+      if (bullet && bullet.trim() !== '' && !isValidLength(bullet, 10, 500)) {
         errors[`bullet_${index}`] = `Bullet ${index + 1} must be between 10 and 500 characters`;
       }
     });
@@ -140,7 +140,7 @@ export const validateSocialLink = (socialLink) => {
     errors.url = 'Please provide a valid URL starting with http:// or https://';
   }
   
-  const validIcons = ['github', 'linkedin', 'leetcode', 'codeforces', 'portfolio', 'website', 'twitter', 'medium', 'youtube', 'instagram', 'facebook', 'default'];
+  const validIcons = ['github', 'linkedin', 'leetcode', 'codeforces', 'portfolio', 'website', 'twitter', 'medium', 'youtube', 'instagram', 'facebook', 'link', 'default'];
   if (!validIcons.includes(socialLink.icon)) {
     errors.icon = 'Invalid icon selected';
   }
@@ -162,6 +162,60 @@ export const validateInternship = (internship) => {
   
   if (internship.description && !isValidLength(internship.description, 0, 1000)) {
     errors.description = 'Description must not exceed 1000 characters';
+  }
+  
+  if (internship.certLink && !isValidURL(internship.certLink)) {
+    errors.certLink = 'Please provide a valid certificate URL starting with http:// or https://';
+  }
+  
+  if (internship.bullets && internship.bullets.length > 10) {
+    errors.bullets = 'Maximum 10 bullet points allowed per internship';
+  }
+  
+  if (internship.bullets) {
+    internship.bullets.forEach((bullet, index) => {
+      if (bullet && bullet.trim() !== '' && !isValidLength(bullet, 5, 500)) {
+        errors[`bullet_${index}`] = `Bullet ${index + 1} must be between 5 and 500 characters`;
+      }
+    });
+  }
+  
+  return errors;
+};
+
+// Validate position of responsibility
+export const validatePOR = (por) => {
+  const errors = {};
+  
+  if (!isValidLength(por.title, 2, 200)) {
+    errors.title = 'Title must be between 2 and 200 characters';
+  }
+  
+  if (por.organization && !isValidLength(por.organization, 2, 200)) {
+    errors.organization = 'Organization must be between 2 and 200 characters';
+  }
+  
+  if (por.description && !isValidLength(por.description, 0, 1000)) {
+    errors.description = 'Description must not exceed 1000 characters';
+  }
+  
+  return errors;
+};
+
+// Validate course
+export const validateCourse = (course) => {
+  const errors = {};
+  
+  if (!isValidLength(course.name, 2, 200)) {
+    errors.name = 'Course name must be between 2 and 200 characters';
+  }
+  
+  if (course.platform && !isValidLength(course.platform, 2, 200)) {
+    errors.platform = 'Platform must be between 2 and 200 characters';
+  }
+  
+  if (course.link && !isValidURL(course.link)) {
+    errors.link = 'Please provide a valid URL starting with http:// or https://';
   }
   
   return errors;
@@ -238,6 +292,22 @@ export const validateProfileForm = (formData) => {
     const internshipErrors = validateInternship(internship);
     if (Object.keys(internshipErrors).length > 0) {
       errors[`internship_${index}`] = internshipErrors;
+    }
+  });
+
+  // Positions of Responsibility
+  formData.positionsOfResponsibility?.forEach((por, index) => {
+    const porErrors = validatePOR(por);
+    if (Object.keys(porErrors).length > 0) {
+      errors[`por_${index}`] = porErrors;
+    }
+  });
+  
+  // Courses
+  formData.courses?.forEach((course, index) => {
+    const courseErrors = validateCourse(course);
+    if (Object.keys(courseErrors).length > 0) {
+      errors[`course_${index}`] = courseErrors;
     }
   });
   

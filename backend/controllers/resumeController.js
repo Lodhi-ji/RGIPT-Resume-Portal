@@ -86,7 +86,10 @@ const createResumeVersion = async (req, res) => {
       selectedInternships,
       selectedPublications,
       selectedCertifications,
-      selectedSocialLinks
+      selectedSocialLinks,
+      selectedAchievements,
+      selectedCourses,
+      selectedPositionsOfResponsibility
     } = req.body;
 
     // Validate required fields
@@ -183,7 +186,10 @@ const createResumeVersion = async (req, res) => {
       selectedInternships: selectedInternships || [],
       selectedPublications: selectedPublications || [],
       selectedCertifications: selectedCertifications || [],
-      selectedSocialLinks: selectedSocialLinks || []
+      selectedSocialLinks: selectedSocialLinks || [],
+      selectedAchievements: selectedAchievements || [],
+      selectedCourses: selectedCourses || [],
+      selectedPositionsOfResponsibility: selectedPositionsOfResponsibility || []
     });
 
     res.status(201).json({
@@ -251,7 +257,10 @@ const updateResumeVersion = async (req, res) => {
       selectedInternships,
       selectedPublications,
       selectedCertifications,
-      selectedSocialLinks
+      selectedSocialLinks,
+      selectedAchievements,
+      selectedCourses,
+      selectedPositionsOfResponsibility
     } = req.body;
 
     // Validate template if provided
@@ -296,6 +305,9 @@ const updateResumeVersion = async (req, res) => {
     resumeVersion.selectedPublications = selectedPublications !== undefined ? selectedPublications : resumeVersion.selectedPublications;
     resumeVersion.selectedCertifications = selectedCertifications !== undefined ? selectedCertifications : resumeVersion.selectedCertifications;
     resumeVersion.selectedSocialLinks = selectedSocialLinks !== undefined ? selectedSocialLinks : resumeVersion.selectedSocialLinks;
+    resumeVersion.selectedAchievements = selectedAchievements !== undefined ? selectedAchievements : resumeVersion.selectedAchievements;
+    resumeVersion.selectedCourses = selectedCourses !== undefined ? selectedCourses : resumeVersion.selectedCourses;
+    resumeVersion.selectedPositionsOfResponsibility = selectedPositionsOfResponsibility !== undefined ? selectedPositionsOfResponsibility : resumeVersion.selectedPositionsOfResponsibility;
 
     await resumeVersion.save();
 
@@ -430,6 +442,18 @@ const generateResumePreview = async (req, res) => {
       resumeVersion.selectedSocialLinks?.includes(s._id.toString())
     ) || [];
 
+    const selectedAchievements = resumeVersion.selectedAchievements?.length > 0
+      ? resumeVersion.selectedAchievements.map(i => profile.achievements[i]).filter(Boolean)
+      : [];
+
+    const selectedCourses = resumeVersion.selectedCourses?.length > 0
+      ? profile.courses?.filter(c => resumeVersion.selectedCourses.includes(c._id.toString())) || []
+      : [];
+
+    const selectedPositionsOfResponsibility = resumeVersion.selectedPositionsOfResponsibility?.length > 0
+      ? profile.positionsOfResponsibility?.filter(p => resumeVersion.selectedPositionsOfResponsibility.includes(p._id.toString())) || []
+      : [];
+
     // Prepare data for template
     const data = {
       name: student.name,
@@ -439,7 +463,9 @@ const generateResumePreview = async (req, res) => {
       alternateEmail: profile.alternateEmail,
       degree: student.degree,
       branch: student.branch,
+      graduationYear: student.graduationYear,
       cpi: student.cpi,
+      cgpaRemark: student.cgpaRemark,
       class10Percentage: student.class10.percentage,
       class10School: student.class10.school,
       class12Percentage: student.class12.percentage,
@@ -449,9 +475,10 @@ const generateResumePreview = async (req, res) => {
       internships: selectedInternships,
       publications: selectedPublications,
       certifications: selectedCertifications,
-      achievements: profile.achievements,
-      positionsOfResponsibility: profile.positionsOfResponsibility,
-      courses: profile.courses,
+      achievements: selectedAchievements,
+      positionsOfResponsibility: selectedPositionsOfResponsibility,
+      extracurricular: profile.extracurricular,
+      courses: selectedCourses,
       socialLinks: selectedSocialLinks
     };
 

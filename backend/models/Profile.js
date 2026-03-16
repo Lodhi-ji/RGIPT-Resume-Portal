@@ -44,6 +44,10 @@ const profileSchema = new mongoose.Schema({
       type: String,
       trim: true
     },
+    supervisor: {
+      type: String,
+      trim: true
+    },
     bullets: [{
       type: String,
       trim: true
@@ -69,7 +73,15 @@ const profileSchema = new mongoose.Schema({
     location: {
       type: String,
       trim: true
-    }
+    },
+    certLink: {
+      type: String,
+      trim: true
+    },
+    bullets: [{
+      type: String,
+      trim: true
+    }]
   }],
   achievements: [{
     type: String,
@@ -171,6 +183,10 @@ const profileSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     }
+  }],
+  extracurricular: [{
+    type: String,
+    trim: true
   }]
 }, {
   timestamps: true

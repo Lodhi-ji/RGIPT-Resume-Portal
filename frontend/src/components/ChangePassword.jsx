@@ -17,6 +17,13 @@ const ChangePassword = ({ onClose }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const passwordRules = [
+    { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+    { label: 'One uppercase letter (A-Z)', test: (p) => /[A-Z]/.test(p) },
+    { label: 'One lowercase letter (a-z)', test: (p) => /[a-z]/.test(p) },
+    { label: 'One number (0-9)', test: (p) => /\d/.test(p) },
+  ];
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
@@ -154,6 +161,18 @@ const ChangePassword = ({ onClose }) => {
               </button>
             </div>
             <small>Must be at least 8 characters with uppercase, lowercase, and number</small>
+            {formData.newPassword && (
+              <ul style={{ listStyle: 'none', padding: '8px 0 0', margin: 0, fontSize: '0.8rem' }}>
+                {passwordRules.map((rule, i) => {
+                  const passed = rule.test(formData.newPassword);
+                  return (
+                    <li key={i} style={{ color: passed ? '#16a34a' : '#dc2626', marginBottom: '2px' }}>
+                      {passed ? '✓' : '✗'} {rule.label}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           <div className="form-group">

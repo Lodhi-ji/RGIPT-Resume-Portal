@@ -70,9 +70,16 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
                 <h3>Excel File Requirements:</h3>
                 <ul>
                   <li>File format: .xlsx or .xls</li>
-                  <li>Required columns: name, rollNo, instituteEmail, branch, degree, cpi</li>
-                  <li>Required columns: 10th percentage, 12th percentage, 10th school, 12th school</li>
                   <li>Maximum file size: 5MB</li>
+                  <li>
+                    Required columns:
+                    <ul>
+                      <li>name, rollNo, instituteEmail, branch, degree</li>
+                      <li>cpi, graduationYear, semester</li>
+                      <li>10th percentage, 10th school</li>
+                      <li>12th percentage, 12th school</li>
+                    </ul>
+                  </li>
                 </ul>
               </div>
 

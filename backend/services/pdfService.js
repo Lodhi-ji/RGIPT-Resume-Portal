@@ -81,6 +81,21 @@ class PDFService {
           : profile.socialLinks; // Keep object format if not array
       }
 
+      // Filter achievements based on selection
+      const selectedAchievements = resumeVersion.selectedAchievements?.length > 0
+        ? resumeVersion.selectedAchievements.map(i => profile.achievements[i]).filter(Boolean)
+        : [];
+
+      // Filter courses based on selection
+      const selectedCourses = resumeVersion.selectedCourses?.length > 0
+        ? (profile.courses || []).filter(c => resumeVersion.selectedCourses.some(id => id.toString() === c._id.toString()))
+        : [];
+
+      // Filter positions of responsibility based on selection
+      const selectedPositions = resumeVersion.selectedPositionsOfResponsibility?.length > 0
+        ? (profile.positionsOfResponsibility || []).filter(p => resumeVersion.selectedPositionsOfResponsibility.some(id => id.toString() === p._id.toString()))
+        : [];
+
       // Prepare data object
       const data = {
         name: student.name,
@@ -100,9 +115,9 @@ class PDFService {
         internships: selectedInternships,
         publications: selectedPublications,
         certifications: selectedCertifications,
-        achievements: profile.achievements,
-        positionsOfResponsibility: profile.positionsOfResponsibility,
-        courses: profile.courses,
+        achievements: selectedAchievements,
+        positionsOfResponsibility: selectedPositions,
+        courses: selectedCourses,
         socialLinks: selectedSocialLinks
       };
 
@@ -149,13 +164,6 @@ class PDFService {
       // Step 4: Launch browser (isolated for this request)
       console.log('Launching browser...');
       
-      // Determine browser executable path
-      const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || 
-                            process.env.CHROME_BIN || 
-                            '/usr/bin/chromium-browser';
-      
-      console.log(`Using browser executable: ${executablePath}`);
-      
       const launchOptions = {
         headless: 'new',
         args: [
@@ -172,9 +180,38 @@ class PDFService {
         timeout: 30000  // 30 seconds to launch
       };
       
-      // Only set executablePath if we're in production (Render)
-      if (process.env.NODE_ENV === 'production') {
-        launchOptions.executablePath = executablePath;
+      // Determine browser executable path based on environment
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        // Use explicitly set path from environment
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        console.log(`Using browser from env: ${launchOptions.executablePath}`);
+      } else if (process.env.NODE_ENV === 'production') {
+        // Production (Render) - use system Chromium
+        launchOptions.executablePath = process.env.CHROME_BIN || '/usr/bin/chromium-browser';
+        console.log(`Using production browser: ${launchOptions.executablePath}`);
+      } else if (process.platform === 'win32') {
+        // Windows - try common Chrome installation paths
+        const fs = require('fs');
+        const possiblePaths = [
+          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+          'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+          process.env.LOCALAPPDATA + '\\Google\\Chrome\\Application\\chrome.exe'
+        ];
+        
+        for (const path of possiblePaths) {
+          if (fs.existsSync(path)) {
+            launchOptions.executablePath = path;
+            console.log(`Using Chrome from: ${path}`);
+            break;
+          }
+        }
+        
+        if (!launchOptions.executablePath) {
+          console.log('Chrome not found in common paths, using Puppeteer bundled Chromium');
+        }
+      } else {
+        // Linux/Mac development - let Puppeteer use bundled Chromium
+        console.log('Using Puppeteer bundled Chromium');
       }
       
       browser = await puppeteer.launch(launchOptions);
