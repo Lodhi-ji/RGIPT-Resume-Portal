@@ -54,6 +54,14 @@ const studentSchema = new mongoose.Schema({
       type: String,
       required: [true, '10th school is required'],
       trim: true
+    },
+    year: {
+      type: String,
+      trim: true
+    },
+    board: {
+      type: String,
+      trim: true
     }
   },
   class12: {
@@ -66,6 +74,14 @@ const studentSchema = new mongoose.Schema({
     school: {
       type: String,
       required: [true, '12th school is required'],
+      trim: true
+    },
+    year: {
+      type: String,
+      trim: true
+    },
+    board: {
+      type: String,
       trim: true
     }
   },

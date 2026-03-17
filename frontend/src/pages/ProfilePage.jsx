@@ -65,15 +65,21 @@ const ProfilePage = () => {
           </div>
           <div className="info-item">
             <label>CPI</label>
-            <p>{student.cpi}</p>
+            <p>{student.cpi}{student.cgpaRemark ? ` (${student.cgpaRemark})` : ''}</p>
           </div>
+          {student.graduationYear && (
+            <div className="info-item">
+              <label>Graduation Year</label>
+              <p>{student.graduationYear}</p>
+            </div>
+          )}
           <div className="info-item">
             <label>Class 10th</label>
-            <p>{student.class10.percentage}% - {student.class10.school}</p>
+            <p>{student.class10.percentage}% - {student.class10.school}{student.class10.year ? ` (${student.class10.year})` : ''}</p>
           </div>
           <div className="info-item">
             <label>Class 12th</label>
-            <p>{student.class12.percentage}% - {student.class12.school}</p>
+            <p>{student.class12.percentage}% - {student.class12.school}{student.class12.year ? ` (${student.class12.year})` : ''}</p>
           </div>
         </div>
       </div>

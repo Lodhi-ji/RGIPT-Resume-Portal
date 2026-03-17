@@ -72,7 +72,7 @@ const formatDate = (date) => {
 // Format date range
 const formatDateRange = (startDate, endDate) => {
   const start = formatDate(startDate);
-  const end = endDate ? formatDate(endDate) : 'Present';
+  const end = endDate === 'ongoing' ? 'Present' : (endDate ? formatDate(endDate) : 'Present');
   return `${start} - ${end}`;
 };
 

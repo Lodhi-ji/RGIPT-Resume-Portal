@@ -235,7 +235,7 @@ class TemplateService {
       html = html.replace(/{{instituteEmailHtml}}/g, data.email ? `<div><a href="mailto:${data.email}">${data.email}</a></div>` : '');
       
       html = html.replace(/{{socialLinksHtml}}/g, sectionsEnabled.socialLinks ? this.renderTemplate2SocialLinksInline(data.socialLinks) : '');
-      html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education !== false ? this.renderTemplate2Education(data) : '');
+      html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education !== false ? (templateName === 'template1' ? this.renderTemplate1Education(data) : this.renderTemplate2Education(data)) : '');
       html = html.replace(/{{internshipsHtml}}/g, sectionsEnabled.internships !== false ? this.renderTemplate2Internships(data.internships) : '');
       html = html.replace(/{{projectsHtml}}/g, sectionsEnabled.projects !== false ? this.renderTemplate2Projects(data.projects) : '');
       html = html.replace(/{{publicationsHtml}}/g, sectionsEnabled.publications !== false ? this.renderTemplate2Publications(data.publications) : '');
@@ -322,60 +322,130 @@ class TemplateService {
     return html.replace(regex, shouldShow ? '$1' : '');
   }
 
-  // Template 2 (LaTeX-inspired) specific rendering methods
-  renderTemplate2Education(data) {
+  // Template 1 — table format education
+  renderTemplate1Education(data) {
     const rows = [];
-    
-    // Add degree education
+
     if (data.degree && data.branch) {
+      const cpiDisplay = data.cpi ? `${data.cpi}${data.cgpaRemark ? ' *' : ''}` : 'N/A';
       rows.push(`
             <tr>
                 <td>${data.degree} in ${data.branch}</td>
                 <td>Rajiv Gandhi Institute of Petroleum Technology</td>
-                <td>Present</td>
-                <td>${data.cpi || 'N/A'}${data.cgpaRemark ? ' (' + data.cgpaRemark + ')' : ''}</td>
+                <td>${data.graduationYear || ''}</td>
+                <td>${cpiDisplay}</td>
             </tr>`);
     }
-    
-    // Add 12th
+
     if (data.class12Percentage && data.class12School) {
       rows.push(`
             <tr>
-                <td>Class XII</td>
+                <td>XII</td>
                 <td>${data.class12School}</td>
-                <td>2020</td>
-                <td>${data.class12Percentage}%</td>
+                <td>${data.class12Year || ''}</td>
+                <td>${data.class12Percentage}</td>
             </tr>`);
     }
-    
-    // Add 10th
+
     if (data.class10Percentage && data.class10School) {
       rows.push(`
             <tr>
-                <td>Class X</td>
+                <td>X</td>
                 <td>${data.class10School}</td>
-                <td>2018</td>
-                <td>${data.class10Percentage}%</td>
+                <td>${data.class10Year || ''}</td>
+                <td>${data.class10Percentage}</td>
             </tr>`);
     }
-    
+
     if (rows.length === 0) return '';
-    
+
+    const footnote = data.cgpaRemark
+      ? `<div class="edu-footnote">* ${data.cgpaRemark}</div>`
+      : '';
+
     return `
     <div class="section-wrapper">
         <div class="section-heading">Education</div>
         <table class="edu-table">
             <thead>
                 <tr>
-                    <th>Course</th>
+                    <th>COURSE</th>
                     <th>Institution</th>
                     <th>Year</th>
-                    <th>CPI/CGPA/Percentage</th>
+                    <th>CPI/CGPA/%</th>
                 </tr>
             </thead>
             <tbody>${rows.join('')}
             </tbody>
         </table>
+        ${footnote}
+    </div>`;
+  }
+
+  // Template 2 (LaTeX-inspired) specific rendering methods
+  renderTemplate2Education(data) {
+    const items = [];
+
+    // RGIPT degree row
+    if (data.degree && data.branch) {
+      const cpiText = data.cpi ? `CGPA: ${data.cpi}/10${data.cgpaRemark ? ` *${data.cgpaRemark}` : ''}` : '';
+      const degreeDetail = [
+        `${data.degree} in ${data.branch}`,
+        cpiText ? `(${cpiText})` : ''
+      ].filter(Boolean).join(' ');
+
+      items.push(`
+    <div class="item">
+        <div class="flex-between">
+            <span class="item-title">Rajiv Gandhi Institute of Petroleum Technology</span>
+            <span>Jais, Amethi</span>
+        </div>
+        <div class="flex-between">
+            <span>${degreeDetail}</span>
+            <span>${data.graduationYear || ''}</span>
+        </div>
+    </div>`);
+    }
+
+    // Class XII row
+    if (data.class12Percentage && data.class12School) {
+      const boardText = data.class12Board ? `${data.class12Board} Board` : 'Board';
+      const detail = `Senior Secondary ${boardText} (Percentage: ${data.class12Percentage}%)`;
+      items.push(`
+    <div class="item">
+        <div class="flex-between">
+            <span class="item-title">${data.class12School}</span>
+            <span>Academic Year</span>
+        </div>
+        <div class="flex-between">
+            <span>${detail}</span>
+            <span>${data.class12Year || ''}</span>
+        </div>
+    </div>`);
+    }
+
+    // Class X row
+    if (data.class10Percentage && data.class10School) {
+      const boardText = data.class10Board ? `${data.class10Board} Board` : 'Board';
+      const detail = `Secondary ${boardText} (Percentage: ${data.class10Percentage}%)`;
+      items.push(`
+    <div class="item">
+        <div class="flex-between">
+            <span class="item-title">${data.class10School}</span>
+            <span>Academic Year</span>
+        </div>
+        <div class="flex-between">
+            <span>${detail}</span>
+            <span>${data.class10Year || ''}</span>
+        </div>
+    </div>`);
+    }
+
+    if (items.length === 0) return '';
+
+    return `
+    <div class="section-wrapper">
+        <div class="section-heading">Education</div>${items.join('')}
     </div>`;
   }
 
@@ -384,7 +454,7 @@ class TemplateService {
     
     const items = internships.map(internship => {
       const startDate = internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
-      const endDate = internship.endDate ? new Date(internship.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present';
+      const endDate = internship.endDate === 'ongoing' ? 'Present' : (internship.endDate ? new Date(internship.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present');
       const duration = startDate && endDate ? `${startDate} - ${endDate}` : '';
       
       const certIcon = internship.certLink ? `<a href="${internship.certLink}" target="_blank" class="title-icon"><i class="fas fa-link"></i></a>` : '';
@@ -426,7 +496,7 @@ class TemplateService {
     
     const items = projects.map(project => {
       const startDate = project.startDate ? new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
-      const endDate = project.endDate ? new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present';
+      const endDate = project.endDate === 'ongoing' ? 'Present' : (project.endDate ? new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present');
       const duration = startDate && endDate ? `${startDate} - ${endDate}` : '';
       
       const githubIcon = project.githubLink ? `<a href="${project.githubLink}" target="_blank" class="title-icon"><i class="fab fa-github"></i></a>` : '';
@@ -553,7 +623,7 @@ class TemplateService {
     
     const items = positions.map(pos => {
       const startDate = pos.startDate ? new Date(pos.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
-      const endDate = pos.endDate ? new Date(pos.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present';
+      const endDate = pos.endDate === 'ongoing' ? 'Present' : (pos.endDate ? new Date(pos.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Present');
       const duration = startDate && endDate ? `${startDate} - ${endDate}` : '';
       
       const description = pos.description ? `

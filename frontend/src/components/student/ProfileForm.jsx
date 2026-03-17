@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../../services/api';
-import { validateProfileForm, getErrorMessage } from '../../utils/validation';
+import { validateProfileForm } from '../../utils/validation';
 
 const TABS = [
   { id: 'contact',      label: 'Contact',       icon: '👤' },
@@ -38,6 +38,22 @@ const ProfileForm = ({ profile, onUpdate }) => {
   const [newExtracurricular, setNewExtracurricular] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Generic helper: get flat error list for any section key
+  const getSectionErrors = (prefix, index) => {
+    const errs = validationErrors[`${prefix}_${index}`];
+    if (!errs) return [];
+    return Object.values(errs);
+  };
+
+  const getProjectErrors = (index) => getSectionErrors('project', index);
+  const getInternshipErrors = (index) => getSectionErrors('internship', index);
+  const getCertificationErrors = (index) => getSectionErrors('certification', index);
+  const getPublicationErrors = (index) => getSectionErrors('publication', index);
+  const getPORErrors = (index) => getSectionErrors('por', index);
+  const getCourseErrors = (index) => getSectionErrors('course', index);
+  const getSocialLinkErrors = (index) => getSectionErrors('socialLink', index);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -109,11 +125,24 @@ const ProfileForm = ({ profile, onUpdate }) => {
       projects: formData.projects.map(p => ({ ...p, bullets: (p.bullets || []).filter(b => b.trim() !== '') })),
       internships: formData.internships.map(x => ({ ...x, bullets: (x.bullets || []).filter(b => b.trim() !== '') })),
     };
-    const validationErrors = validateProfileForm(cleanedFormData);
-    if (Object.keys(validationErrors).length > 0) {
-      setMessage(getErrorMessage(validationErrors));
+    const errors = validateProfileForm(cleanedFormData);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      // Find which tab has errors and switch to it
+      const errorKey = Object.keys(errors)[0];
+      if (errorKey.startsWith('project_')) setActiveTab('projects');
+      else if (errorKey.startsWith('internship_')) setActiveTab('internships');
+      else if (errorKey.startsWith('certification_')) setActiveTab('certifications');
+      else if (errorKey.startsWith('publication_')) setActiveTab('publications');
+      else if (errorKey.startsWith('por_')) setActiveTab('positions');
+      else if (errorKey.startsWith('course_')) setActiveTab('courses');
+      else if (errorKey.startsWith('socialLink_')) setActiveTab('social');
+      else if (errorKey.startsWith('achievement_')) setActiveTab('achievements');
+      else if (errorKey === 'phone' || errorKey === 'alternateEmail') setActiveTab('contact');
+      setMessage('Please fix the errors highlighted below.');
       return;
     }
+    setValidationErrors({});
     setSaving(true);
     setMessage('');
     try {
@@ -122,7 +151,16 @@ const ProfileForm = ({ profile, onUpdate }) => {
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage(error.response?.data?.error?.message || 'Failed to update profile');
+      const errData = error.response?.data;
+      // Try to extract a meaningful message from backend
+      const details = errData?.error?.details;
+      if (details && details.length > 0) {
+        // Show the first specific validation detail from backend
+        setMessage(details[0].msg || details[0].message || 'Validation failed');
+      } else {
+        const msg = errData?.error?.message || errData?.message || errData?.error || 'Failed to update profile';
+        setMessage(typeof msg === 'string' ? msg : 'Failed to update profile');
+      }
     } finally {
       setSaving(false);
     }
@@ -140,6 +178,15 @@ const ProfileForm = ({ profile, onUpdate }) => {
   const inputCls = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors';
   const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
   const cardCls = 'bg-gray-50 rounded-lg p-5 border border-gray-200 space-y-4';
+
+  const InlineErrors = ({ errors }) => errors.length === 0 ? null : (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+      <p className="text-xs font-semibold text-red-700 mb-1">Fix the following:</p>
+      <ul className="list-disc list-inside space-y-0.5">
+        {errors.map((err, i) => <li key={i} className="text-xs text-red-600">{err}</li>)}
+      </ul>
+    </div>
+  );
 
   const tabCount = (tab) => {
     const map = { skills: formData.skills.length, projects: formData.projects.length, internships: formData.internships.length, certifications: formData.certifications.length, publications: formData.publications.length, positions: formData.positionsOfResponsibility.length, courses: formData.courses.length, achievements: formData.achievements.length, extracurricular: formData.extracurricular.length, social: formData.socialLinks.length };
@@ -237,11 +284,21 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Projects</h3>
               {formData.projects.map((project, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getProjectErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Project {index + 1}</span>
                     <button type="button" onClick={() => removeProject(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  {getProjectErrors(index).length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-red-700 mb-1">Fix the following:</p>
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {getProjectErrors(index).map((err, i) => (
+                          <li key={i} className="text-xs text-red-600">{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className={labelCls}>Title *</label>
@@ -257,7 +314,13 @@ const ProfileForm = ({ profile, onUpdate }) => {
                     </div>
                     <div>
                       <label className={labelCls}>End Date</label>
-                      <input type="date" value={project.endDate ? project.endDate.split('T')[0] : ''} onChange={(e) => updateProject(index, 'endDate', e.target.value)} className={inputCls} />
+                      <div className="space-y-1.5">
+                        <input type="date" value={project.endDate && project.endDate !== 'ongoing' ? project.endDate.split('T')[0] : ''} onChange={(e) => updateProject(index, 'endDate', e.target.value)} disabled={project.endDate === 'ongoing'} className={`${inputCls} disabled:bg-gray-100 disabled:text-gray-400`} />
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={project.endDate === 'ongoing'} onChange={(e) => updateProject(index, 'endDate', e.target.checked ? 'ongoing' : '')} className="w-4 h-4 text-blue-600 rounded" />
+                          <span className="text-sm text-gray-600">Ongoing</span>
+                        </label>
+                      </div>
                     </div>
                     <div>
                       <label className={labelCls}>GitHub Link</label>
@@ -299,11 +362,12 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Internships</h3>
               {formData.internships.map((internship, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getInternshipErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Internship {index + 1}</span>
                     <button type="button" onClick={() => removeInternship(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  <InlineErrors errors={getInternshipErrors(index)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Role *</label>
@@ -327,7 +391,13 @@ const ProfileForm = ({ profile, onUpdate }) => {
                     </div>
                     <div>
                       <label className={labelCls}>End Date</label>
-                      <input type="date" value={internship.endDate ? internship.endDate.split('T')[0] : ''} onChange={(e) => updateInternship(index, 'endDate', e.target.value)} className={inputCls} />
+                      <div className="space-y-1.5">
+                        <input type="date" value={internship.endDate && internship.endDate !== 'ongoing' ? internship.endDate.split('T')[0] : ''} onChange={(e) => updateInternship(index, 'endDate', e.target.value)} disabled={internship.endDate === 'ongoing'} className={`${inputCls} disabled:bg-gray-100 disabled:text-gray-400`} />
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={internship.endDate === 'ongoing'} onChange={(e) => updateInternship(index, 'endDate', e.target.checked ? 'ongoing' : '')} className="w-4 h-4 text-blue-600 rounded" />
+                          <span className="text-sm text-gray-600">Ongoing</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Description</label>
@@ -357,11 +427,12 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Certifications</h3>
               {formData.certifications.map((cert, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getCertificationErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Certification {index + 1}</span>
                     <button type="button" onClick={() => removeCertification(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  <InlineErrors errors={getCertificationErrors(index)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Name *</label>
@@ -391,11 +462,12 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Publications</h3>
               {formData.publications.map((pub, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getPublicationErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Publication {index + 1}</span>
                     <button type="button" onClick={() => removePublication(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  <InlineErrors errors={getPublicationErrors(index)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className={labelCls}>Title *</label>
@@ -429,11 +501,12 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Positions of Responsibility</h3>
               {formData.positionsOfResponsibility.map((por, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getPORErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Position {index + 1}</span>
                     <button type="button" onClick={() => removePOR(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  <InlineErrors errors={getPORErrors(index)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Title *</label>
@@ -449,7 +522,13 @@ const ProfileForm = ({ profile, onUpdate }) => {
                     </div>
                     <div>
                       <label className={labelCls}>End Date</label>
-                      <input type="date" value={por.endDate ? por.endDate.split('T')[0] : ''} onChange={(e) => updatePOR(index, 'endDate', e.target.value)} className={inputCls} />
+                      <div className="space-y-1.5">
+                        <input type="date" value={por.endDate && por.endDate !== 'ongoing' ? por.endDate.split('T')[0] : ''} onChange={(e) => updatePOR(index, 'endDate', e.target.value)} disabled={por.endDate === 'ongoing'} className={`${inputCls} disabled:bg-gray-100 disabled:text-gray-400`} />
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={por.endDate === 'ongoing'} onChange={(e) => updatePOR(index, 'endDate', e.target.checked ? 'ongoing' : '')} className="w-4 h-4 text-blue-600 rounded" />
+                          <span className="text-sm text-gray-600">Ongoing</span>
+                        </label>
+                      </div>
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Description</label>
@@ -467,11 +546,12 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Courses</h3>
               {formData.courses.map((course, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getCourseErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Course {index + 1}</span>
                     <button type="button" onClick={() => removeCourse(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  <InlineErrors errors={getCourseErrors(index)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Course Name *</label>
@@ -541,11 +621,12 @@ const ProfileForm = ({ profile, onUpdate }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Social Links</h3>
               {formData.socialLinks.map((link, index) => (
-                <div key={index} className={cardCls}>
+                <div key={index} className={`${cardCls} ${getSocialLinkErrors(index).length > 0 ? 'border-red-300' : ''}`}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-700">Link {index + 1}</span>
                     <button type="button" onClick={() => removeSocialLink(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
                   </div>
+                  <InlineErrors errors={getSocialLinkErrors(index)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Title *</label>

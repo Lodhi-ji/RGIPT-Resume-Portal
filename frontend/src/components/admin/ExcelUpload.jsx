@@ -80,6 +80,13 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
                       <li>12th percentage, 12th school</li>
                     </ul>
                   </li>
+                  <li>
+                    Optional columns:
+                    <ul>
+                      <li>10th year, 12th year</li>
+                      <li>10th board, 12th board (e.g. CBSE, MP Board)</li>
+                    </ul>
+                  </li>
                 </ul>
               </div>
 

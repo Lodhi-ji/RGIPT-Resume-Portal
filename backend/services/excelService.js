@@ -38,6 +38,9 @@ class ExcelService {
       'semester'
     ];
 
+    // Optional columns (won't fail if missing)
+    const optionalColumns = ['10th year', '12th year', '10th board', '12th board'];
+
     if (!data || data.length === 0) {
       throw new Error('Excel file is empty');
     }
@@ -142,14 +145,18 @@ class ExcelService {
       degree: excelRow.degree.trim(),
       graduationYear: excelRow.graduationYear.toString().trim(),
       cpi: parseFloat(excelRow.cpi),
-      cgpaRemark: `till Semester ${excelRow.semester.toString().trim()}`,
+      cgpaRemark: `till Semester ${parseInt(excelRow.semester.toString().trim()) - 1}`,
       class10: {
         percentage: parseFloat(excelRow['10th percentage']),
-        school: excelRow['10th school'].trim()
+        school: excelRow['10th school'].trim(),
+        year: excelRow['10th year'] ? excelRow['10th year'].toString().trim() : '',
+        board: excelRow['10th board'] ? excelRow['10th board'].toString().trim() : ''
       },
       class12: {
         percentage: parseFloat(excelRow['12th percentage']),
-        school: excelRow['12th school'].trim()
+        school: excelRow['12th school'].trim(),
+        year: excelRow['12th year'] ? excelRow['12th year'].toString().trim() : '',
+        board: excelRow['12th board'] ? excelRow['12th board'].toString().trim() : ''
       },
       password: null,  // No password until student activates account
       passwordSet: false,  // Account not activated yet

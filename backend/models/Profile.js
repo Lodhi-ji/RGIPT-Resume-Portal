@@ -35,7 +35,10 @@ const profileSchema = new mongoose.Schema({
       trim: true
     },
     startDate: Date,
-    endDate: Date,
+    endDate: {
+      type: String,
+      trim: true
+    },
     githubLink: {
       type: String,
       trim: true
@@ -65,7 +68,10 @@ const profileSchema = new mongoose.Schema({
       trim: true
     },
     startDate: Date,
-    endDate: Date,
+    endDate: {
+      type: String,
+      trim: true
+    },
     description: {
       type: String,
       trim: true
@@ -141,7 +147,10 @@ const profileSchema = new mongoose.Schema({
       trim: true
     },
     startDate: Date,
-    endDate: Date,
+    endDate: {
+      type: String,
+      trim: true
+    },
     description: {
       type: String,
       trim: true

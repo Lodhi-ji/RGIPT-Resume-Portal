@@ -26,171 +26,199 @@ const changePasswordValidation = [
 // Validation rules for profile update
 const profileValidation = [
   body('phone')
-    .optional()
+    .optional({ checkFalsy: true })
     .isMobilePhone('any', { strictMode: false })
     .withMessage('Please provide a valid phone number'),
   body('alternateEmail')
-    .optional()
+    .optional({ checkFalsy: true })
     .isEmail()
     .normalizeEmail()
     .withMessage('Please provide a valid alternate email'),
-  
+
   // Projects validation
   body('projects.*.title')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 3, max: 200 })
-    .withMessage('Project title must be between 3 and 200 characters'),
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Project title must not exceed 200 characters'),
   body('projects.*.description')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 1000 })
     .withMessage('Project description must not exceed 1000 characters'),
   body('projects.*.technologies')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Technologies must not exceed 500 characters'),
   body('projects.*.githubLink')
-    .optional()
+    .optional({ checkFalsy: true })
     .custom((value) => {
       if (value && value.trim() !== '') {
         return /^https?:\/\/(www\.)?github\.com\/.+/.test(value);
       }
       return true;
     })
-    .withMessage('Please provide a valid GitHub URL (https://github.com/...)'),
+    .withMessage('GitHub link must start with https://github.com/'),
   body('projects.*.liveLink')
-    .optional()
+    .optional({ checkFalsy: true })
     .custom((value) => {
       if (value && value.trim() !== '') {
         return /^https?:\/\/.+/.test(value);
       }
       return true;
     })
-    .withMessage('Please provide a valid URL starting with http:// or https://'),
+    .withMessage('Live link must start with http:// or https://'),
   body('projects.*.bullets')
     .optional()
     .isArray({ max: 10 })
     .withMessage('Maximum 10 bullet points allowed per project'),
   body('projects.*.bullets.*')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 10, max: 500 })
-    .withMessage('Each bullet point must be between 10 and 500 characters'),
-  
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Bullet point must not exceed 500 characters'),
+
   // Publications validation
   body('publications.*.title')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 5, max: 300 })
-    .withMessage('Publication title must be between 5 and 300 characters'),
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Publication title must not exceed 300 characters'),
   body('publications.*.journal')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 3, max: 200 })
-    .withMessage('Journal/Conference name must be between 3 and 200 characters'),
+    .isLength({ max: 200 })
+    .withMessage('Journal name must not exceed 200 characters'),
   body('publications.*.year')
-    .optional()
-    .matches(/^(19|20)\d{2}$/)
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      if (value && value.trim() !== '') {
+        return /^(19|20)\d{2}$/.test(value);
+      }
+      return true;
+    })
     .withMessage('Year must be a valid 4-digit year (1900-2099)'),
   body('publications.*.paperLink')
-    .optional()
+    .optional({ checkFalsy: true })
     .custom((value) => {
       if (value && value.trim() !== '') {
         return /^https?:\/\/.+/.test(value);
       }
       return true;
     })
-    .withMessage('Please provide a valid paper URL starting with http:// or https://'),
+    .withMessage('Paper link must start with http:// or https://'),
   body('publications.*.description')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 1000 })
-    .withMessage('Publication description must not exceed 1000 characters'),
-  
+    .withMessage('Description must not exceed 1000 characters'),
+
   // Certifications validation
   body('certifications.*.name')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 3, max: 200 })
-    .withMessage('Certification name must be between 3 and 200 characters'),
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Certification name must not exceed 200 characters'),
   body('certifications.*.issuer')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage('Issuer name must be between 2 and 200 characters'),
+    .isLength({ max: 200 })
+    .withMessage('Issuer name must not exceed 200 characters'),
   body('certifications.*.certLink')
-    .optional()
+    .optional({ checkFalsy: true })
     .custom((value) => {
       if (value && value.trim() !== '') {
         return /^https?:\/\/.+/.test(value);
       }
       return true;
     })
-    .withMessage('Please provide a valid certificate URL starting with http:// or https://'),
-  
-  // Social Links validation (array format)
+    .withMessage('Certificate link must start with http:// or https://'),
+
+  // Social Links validation
   body('socialLinks')
     .optional()
     .isArray({ max: 15 })
     .withMessage('Maximum 15 social links allowed'),
   body('socialLinks.*.title')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Social link title must be between 2 and 50 characters'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Social link title must not exceed 50 characters'),
   body('socialLinks.*.url')
-    .optional()
-    .isURL({ protocols: ['http', 'https'], require_protocol: true })
-    .withMessage('Please provide a valid URL starting with http:// or https://'),
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      if (value && value.trim() !== '') {
+        return /^https?:\/\/.+/.test(value);
+      }
+      return true;
+    })
+    .withMessage('URL must start with http:// or https://'),
   body('socialLinks.*.icon')
-    .optional()
-    .isIn(['github', 'linkedin', 'leetcode', 'codeforces', 'portfolio', 'website', 'twitter', 'medium', 'youtube', 'instagram', 'facebook', 'default'])
-    .withMessage('Invalid icon name. Must be one of: github, linkedin, leetcode, codeforces, portfolio, website, twitter, medium, youtube, instagram, facebook, default'),
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Icon must be a string'),
   body('socialLinks.*.displayInHeader')
     .optional()
     .isBoolean()
     .withMessage('displayInHeader must be true or false'),
-  
+
   // Internships validation
   body('internships.*.company')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage('Company name must be between 2 and 200 characters'),
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Company name must not exceed 200 characters'),
   body('internships.*.role')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage('Role must be between 2 and 200 characters'),
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Role must not exceed 200 characters'),
   body('internships.*.description')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 1000 })
-    .withMessage('Internship description must not exceed 1000 characters'),
-  
+    .withMessage('Description must not exceed 1000 characters'),
+  body('internships.*.certLink')
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      if (value && value.trim() !== '') {
+        return /^https?:\/\/.+/.test(value);
+      }
+      return true;
+    })
+    .withMessage('Certificate link must start with http:// or https://'),
+  body('internships.*.bullets')
+    .optional()
+    .isArray({ max: 10 })
+    .withMessage('Maximum 10 bullet points allowed per internship'),
+  body('internships.*.bullets.*')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Bullet point must not exceed 500 characters'),
+
   // Skills validation
   body('skills')
     .optional()
     .isArray({ max: 50 })
     .withMessage('Maximum 50 skills allowed'),
   body('skills.*')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Each skill must be between 1 and 100 characters'),
-  
+    .withMessage('Each skill must not exceed 100 characters'),
+
   // Achievements validation
   body('achievements')
     .optional()
     .isArray({ max: 20 })
     .withMessage('Maximum 20 achievements allowed'),
   body('achievements.*')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ min: 5, max: 500 })
-    .withMessage('Each achievement must be between 5 and 500 characters')
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Each achievement must not exceed 500 characters'),
 ];
 
 // Validation rules for resume version

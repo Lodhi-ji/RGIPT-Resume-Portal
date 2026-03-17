@@ -106,16 +106,16 @@
             page-break-before: avoid;
         }
 
-        /* Keep entire section together */
+        /* Keep section heading with first item */
         .section-wrapper {
-            page-break-inside: avoid;
+            page-break-inside: auto;
         }
 
         /* --- EDUCATION TABLE --- */
         table.edu-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             text-align: left;
         }
 
@@ -127,6 +127,19 @@
 
         table.edu-table th {
             font-weight: bold;
+        }
+
+        table.edu-table th:nth-child(3),
+        table.edu-table td:nth-child(3) {
+            width: 80px;
+            white-space: nowrap;
+        }
+
+        .edu-footnote {
+            font-size: 8.5pt;
+            color: #333;
+            margin-bottom: 8px;
+            padding-left: 2px;
         }
 
         /* --- REUSABLE ITEM LAYOUT --- */

@@ -46,140 +46,119 @@ export const isValidLength = (text, min, max) => {
 // Validate project
 export const validateProject = (project) => {
   const errors = {};
-  
-  if (!isValidLength(project.title, 3, 200)) {
-    errors.title = 'Project title must be between 3 and 200 characters';
+
+  if (project.title && !isValidLength(project.title, 1, 200)) {
+    errors.title = 'Project title must not exceed 200 characters';
   }
-  
+
   if (project.description && !isValidLength(project.description, 0, 1000)) {
     errors.description = 'Description must not exceed 1000 characters';
   }
-  
+
   if (project.technologies && !isValidLength(project.technologies, 0, 500)) {
     errors.technologies = 'Technologies must not exceed 500 characters';
   }
-  
+
   if (project.githubLink && !isValidGitHubURL(project.githubLink)) {
-    errors.githubLink = 'Please provide a valid GitHub URL (https://github.com/...)';
+    errors.githubLink = 'GitHub link must start with https://github.com/';
   }
-  
+
   if (project.liveLink && !isValidURL(project.liveLink)) {
-    errors.liveLink = 'Please provide a valid URL starting with http:// or https://';
+    errors.liveLink = 'Live link must start with http:// or https://';
   }
-  
+
   if (project.bullets && project.bullets.length > 10) {
     errors.bullets = 'Maximum 10 bullet points allowed';
   }
-  
-  if (project.bullets) {
-    project.bullets.forEach((bullet, index) => {
-      if (bullet && bullet.trim() !== '' && !isValidLength(bullet, 10, 500)) {
-        errors[`bullet_${index}`] = `Bullet ${index + 1} must be between 10 and 500 characters`;
-      }
-    });
-  }
-  
+
   return errors;
 };
 
 // Validate publication
 export const validatePublication = (publication) => {
   const errors = {};
-  
-  if (!isValidLength(publication.title, 5, 300)) {
-    errors.title = 'Publication title must be between 5 and 300 characters';
+
+  if (publication.title && !isValidLength(publication.title, 1, 300)) {
+    errors.title = 'Publication title must not exceed 300 characters';
   }
-  
-  if (!isValidLength(publication.journal, 3, 200)) {
-    errors.journal = 'Journal/Conference name must be between 3 and 200 characters';
+
+  if (publication.journal && !isValidLength(publication.journal, 1, 200)) {
+    errors.journal = 'Journal name must not exceed 200 characters';
   }
-  
-  if (!isValidYear(publication.year)) {
+
+  if (publication.year && !isValidYear(publication.year)) {
     errors.year = 'Year must be a valid 4-digit year (1900-2099)';
   }
-  
+
   if (publication.paperLink && !isValidURL(publication.paperLink)) {
-    errors.paperLink = 'Please provide a valid paper URL starting with http:// or https://';
+    errors.paperLink = 'Paper link must start with http:// or https://';
   }
-  
+
   if (publication.description && !isValidLength(publication.description, 0, 1000)) {
     errors.description = 'Description must not exceed 1000 characters';
   }
-  
+
   return errors;
 };
 
 // Validate certification
 export const validateCertification = (certification) => {
   const errors = {};
-  
-  if (!isValidLength(certification.name, 3, 200)) {
-    errors.name = 'Certification name must be between 3 and 200 characters';
+
+  if (certification.name && !isValidLength(certification.name, 1, 200)) {
+    errors.name = 'Certification name must not exceed 200 characters';
   }
-  
-  if (!isValidLength(certification.issuer, 2, 200)) {
-    errors.issuer = 'Issuer name must be between 2 and 200 characters';
+
+  if (certification.issuer && !isValidLength(certification.issuer, 1, 200)) {
+    errors.issuer = 'Issuer name must not exceed 200 characters';
   }
-  
+
   if (certification.certLink && !isValidURL(certification.certLink)) {
-    errors.certLink = 'Please provide a valid certificate URL starting with http:// or https://';
+    errors.certLink = 'Certificate link must start with http:// or https://';
   }
-  
+
   return errors;
 };
 
 // Validate social link
 export const validateSocialLink = (socialLink) => {
   const errors = {};
-  
-  if (!isValidLength(socialLink.title, 2, 50)) {
-    errors.title = 'Social link title must be between 2 and 50 characters';
+
+  if (socialLink.title && !isValidLength(socialLink.title, 1, 50)) {
+    errors.title = 'Social link title must not exceed 50 characters';
   }
-  
-  if (!isValidURL(socialLink.url)) {
-    errors.url = 'Please provide a valid URL starting with http:// or https://';
+
+  if (socialLink.url && !isValidURL(socialLink.url)) {
+    errors.url = 'URL must start with http:// or https://';
   }
-  
-  const validIcons = ['github', 'linkedin', 'leetcode', 'codeforces', 'portfolio', 'website', 'twitter', 'medium', 'youtube', 'instagram', 'facebook', 'link', 'default'];
-  if (!validIcons.includes(socialLink.icon)) {
-    errors.icon = 'Invalid icon selected';
-  }
-  
+
   return errors;
 };
 
 // Validate internship
 export const validateInternship = (internship) => {
   const errors = {};
-  
-  if (!isValidLength(internship.company, 2, 200)) {
-    errors.company = 'Company name must be between 2 and 200 characters';
+
+  if (internship.company && !isValidLength(internship.company, 1, 200)) {
+    errors.company = 'Company name must not exceed 200 characters';
   }
-  
-  if (!isValidLength(internship.role, 2, 200)) {
-    errors.role = 'Role must be between 2 and 200 characters';
+
+  if (internship.role && !isValidLength(internship.role, 1, 200)) {
+    errors.role = 'Role must not exceed 200 characters';
   }
-  
+
   if (internship.description && !isValidLength(internship.description, 0, 1000)) {
     errors.description = 'Description must not exceed 1000 characters';
   }
-  
+
   if (internship.certLink && !isValidURL(internship.certLink)) {
-    errors.certLink = 'Please provide a valid certificate URL starting with http:// or https://';
+    errors.certLink = 'Certificate link must start with http:// or https://';
   }
-  
+
   if (internship.bullets && internship.bullets.length > 10) {
     errors.bullets = 'Maximum 10 bullet points allowed per internship';
   }
-  
-  if (internship.bullets) {
-    internship.bullets.forEach((bullet, index) => {
-      if (bullet && bullet.trim() !== '' && !isValidLength(bullet, 5, 500)) {
-        errors[`bullet_${index}`] = `Bullet ${index + 1} must be between 5 and 500 characters`;
-      }
-    });
-  }
-  
+
   return errors;
 };
 

@@ -1,6 +1,87 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
-import PDFDownloadDebugger from '../PDFDownloadDebugger';
+
+// A4 at 96dpi = 794px wide × 1123px tall (one page height)
+// We render the iframe at true 794px width then scale it down to fit the container.
+// Page break lines are overlaid at every 1123px of content height.
+const A4Preview = ({ html }) => {
+  const containerRef = useRef(null);
+  const iframeRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [contentHeight, setContentHeight] = useState(1123);
+
+  const A4_WIDTH = 794;
+  const A4_PAGE_HEIGHT = 1123;
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        setScale(containerWidth / A4_WIDTH);
+      }
+    };
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleIframeLoad = () => {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) {
+        const h = doc.documentElement.scrollHeight;
+        setContentHeight(Math.max(h, A4_PAGE_HEIGHT));
+      }
+    } catch (_) {}
+  };
+
+  const scaledHeight = contentHeight * scale;
+
+  // Calculate page break positions (in scaled px)
+  const pageBreaks = [];
+  let breakAt = A4_PAGE_HEIGHT;
+  while (breakAt < contentHeight) {
+    pageBreaks.push(breakAt * scale);
+    breakAt += A4_PAGE_HEIGHT;
+  }
+
+  return (
+    <div ref={containerRef} className="relative w-full overflow-x-hidden" style={{ height: scaledHeight }}>
+      {/* The iframe renders at true A4 width, scaled down */}
+      <iframe
+        ref={iframeRef}
+        srcDoc={html}
+        title="Resume Preview"
+        sandbox="allow-same-origin"
+        scrolling="no"
+        onLoad={handleIframeLoad}
+        style={{
+          width: A4_WIDTH,
+          height: contentHeight,
+          border: 'none',
+          transformOrigin: 'top left',
+          transform: `scale(${scale})`,
+          display: 'block',
+          background: '#fff',
+        }}
+      />
+      {/* Page break overlays */}
+      {pageBreaks.map((y, i) => (
+        <div key={i} style={{ position: 'absolute', top: y, left: 0, right: 0, pointerEvents: 'none' }}>
+          <div style={{ borderTop: '2px dashed #9ca3af', width: '100%' }} />
+          <span style={{
+            position: 'absolute', right: 6, top: 2,
+            fontSize: 10, color: '#9ca3af', background: 'transparent',
+            fontFamily: 'sans-serif'
+          }}>
+            Page {i + 2}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const ResumeBuilder = ({ resume, profile, onClose }) => {
   const [activeTab, setActiveTab] = useState('basic');
@@ -365,7 +446,7 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
         {/* Two-Panel Layout */}
         <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-8">
               
               {/* Left Panel: Editor */}
               <div className="space-y-6">
@@ -679,18 +760,18 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
 
               {/* Right Panel: Live Preview */}
               <div className="lg:sticky lg:top-24 lg:self-start">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Live Preview
-                    </h2>
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-xl font-semibold text-gray-900">Live Preview</h2>
                     {isLoadingPreview && (
                       <span className="text-sm text-blue-600 font-medium">Updating...</span>
                     )}
                   </div>
-                  <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                    {!resume && !previewHTML && (
-                      <div className="aspect-[8.5/11] flex items-center justify-center p-8">
+
+                  {/* A4 preview container */}
+                  <div className="border border-gray-300 rounded overflow-hidden bg-gray-100">
+                    {!resume && !previewHTML ? (
+                      <div className="flex items-center justify-center p-8" style={{ aspectRatio: '1/1.414' }}>
                         <div className="text-center">
                           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -698,17 +779,14 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                           <p className="text-gray-500 text-sm">Save the resume first to see live preview</p>
                         </div>
                       </div>
-                    )}
-                    {previewHTML && (
-                      <iframe
-                        className="w-full aspect-[8.5/11] bg-white"
-                        srcDoc={previewHTML}
-                        title="Resume Preview"
-                        sandbox="allow-same-origin"
-                        scrolling="yes"
-                      />
-                    )}
+                    ) : previewHTML ? (
+                      <A4Preview html={previewHTML} />
+                    ) : null}
                   </div>
+
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    Preview matches PDF output · Dashed line = page break
+                  </p>
                 </div>
               </div>
             </div>
@@ -716,10 +794,7 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
         </div>
       </div>
       
-      {/* PDF Download Debugger - Remove this after debugging */}
-      {process.env.NODE_ENV === 'development' && (
-        <PDFDownloadDebugger resumeId={resume?._id} />
-      )}
+
     </div>
   );
 };
