@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import '../../styles/StudentDetailModal.css';
 
 const StudentDetailModal = ({ student, onClose }) => {
   const [resumes, setResumes] = useState([]);
@@ -9,11 +8,10 @@ const StudentDetailModal = ({ student, onClose }) => {
   const [activeTab, setActiveTab] = useState('resumes');
   const [previewHtml, setPreviewHtml] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
-    if (student) {
-      fetchStudentData();
-    }
+    if (student) fetchStudentData();
   }, [student]);
 
   const fetchStudentData = async () => {
@@ -23,7 +21,6 @@ const StudentDetailModal = ({ student, onClose }) => {
         api.get(`/admin/students/${student._id}/resumes`),
         api.get(`/admin/students/${student._id}/profile`).catch(() => ({ data: { profile: null } }))
       ]);
-      
       setResumes(resumesRes.data.resumes || []);
       setProfile(profileRes.data.profile);
     } catch (error) {
@@ -39,138 +36,131 @@ const StudentDetailModal = ({ student, onClose }) => {
       setPreviewHtml(response.data.html);
       setShowPreview(true);
     } catch (error) {
-      console.error('Error loading preview:', error);
       alert('Failed to load resume preview');
     }
   };
 
   const handleDownload = async (resumeId) => {
     try {
-      console.log('Downloading resume from student detail modal:', resumeId);
-      const response = await api.get(`/admin/resumes/${resumeId}/download`, {
-        responseType: 'blob'
-      });
-
-      console.log('PDF response received:', response);
-      
-      if (!(response.data instanceof Blob)) {
-        throw new Error('Invalid response format');
-      }
-
-      if (response.data.size === 0) {
-        throw new Error('PDF file is empty');
-      }
-      
+      setDownloadingId(resumeId);
+      const response = await api.get(`/admin/resumes/${resumeId}/download`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${student.name}_resume_${resumeId}.pdf`);
+      link.setAttribute('download', `${student.name}_resume.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
-      console.log('PDF download triggered successfully');
     } catch (error) {
-      console.error('Error downloading resume:', error);
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Failed to download resume';
-      alert(`Failed to download resume: ${errorMessage}`);
+      alert('Failed to download resume');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
   if (!student) return null;
 
+  const initials = student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
   return (
-    <div className="student-detail-modal-overlay" onClick={onClose}>
-      <div className="student-detail-modal" onClick={(e) => e.stopPropagation()}>
+    <>
+      {/* Drawer */}
+      <div className="fixed top-0 right-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col border-l border-gray-200">
+
         {/* Header */}
-        <div className="modal-header">
-          <div className="student-info-header">
-            <div className="student-avatar">
-              {student.name.charAt(0).toUpperCase()}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              {initials}
             </div>
             <div>
-              <h2>{student.name}</h2>
-              <p className="student-roll">{student.rollNo}</p>
+              <h2 className="text-lg font-bold text-gray-900 leading-tight">{student.name}</h2>
+              <p className="text-xs text-gray-500">{student.rollNo} · {student.instituteEmail}</p>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors text-lg"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Student Basic Info */}
-        <div className="student-basic-info">
-          <div className="info-item">
-            <span className="info-label">Email:</span>
-            <span className="info-value">{student.instituteEmail}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Branch:</span>
-            <span className="info-value">{student.branch}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Degree:</span>
-            <span className="info-value">{student.degree}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">CPI:</span>
-            <span className="info-value">{student.cpi}</span>
-          </div>
+        {/* Info pills */}
+        <div className="flex items-center gap-2 px-6 py-3 bg-gray-50 border-b border-gray-200 flex-wrap">
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">{student.degree}</span>
+          <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">{student.branch}</span>
+          <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">CPI: {student.cpi}</span>
         </div>
 
         {/* Tabs */}
-        <div className="modal-tabs">
+        <div className="flex border-b border-gray-200 px-6">
           <button
-            className={`tab-btn ${activeTab === 'resumes' ? 'active' : ''}`}
             onClick={() => setActiveTab('resumes')}
+            className={`py-3 px-1 mr-6 text-sm font-semibold border-b-2 transition-colors ${
+              activeTab === 'resumes'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
           >
-            📄 Resumes ({resumes.length})
+            Resumes {!loading && `(${resumes.length})`}
           </button>
           <button
-            className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
+            className={`py-3 px-1 text-sm font-semibold border-b-2 transition-colors ${
+              activeTab === 'profile'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
           >
-            👤 Profile
+            Profile
           </button>
         </div>
 
-        {/* Content */}
-        <div className="modal-content">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {loading ? (
-            <div className="loading-state">Loading...</div>
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+            </div>
           ) : (
             <>
               {/* Resumes Tab */}
               {activeTab === 'resumes' && (
-                <div className="resumes-list">
+                <div className="space-y-3">
                   {resumes.length === 0 ? (
-                    <div className="empty-state">
-                      <p>📄</p>
-                      <p>No resumes created yet</p>
+                    <div className="text-center py-16 text-gray-400">
+                      <div className="text-4xl mb-2">📄</div>
+                      <p className="text-sm">No resumes created yet</p>
                     </div>
                   ) : (
                     resumes.map((resume) => (
-                      <div key={resume._id} className="resume-item">
-                        <div className="resume-item-info">
-                          <h4>{resume.name}</h4>
-                          <div className="resume-meta">
-                            <span className="template-tag">{resume.template}</span>
-                            <span className="date-tag">
-                              {new Date(resume.createdAt).toLocaleDateString()}
+                      <div key={resume._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-200 hover:bg-blue-50 transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900 text-sm truncate">{resume.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 bg-white border border-gray-300 text-gray-600 text-xs rounded-md font-medium">
+                              {resume.template === 'template1' ? 'Template 1' : 'Template 2'}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(resume.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </span>
                           </div>
                         </div>
-                        <div className="resume-item-actions">
+                        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                           <button
-                            className="btn-preview-small"
                             onClick={() => handlePreview(resume._id)}
+                            className="px-3 py-1.5 bg-white border border-gray-300 hover:border-blue-400 hover:text-blue-600 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
                           >
-                            👁️ Preview
+                            Preview
                           </button>
                           <button
-                            className="btn-download-small"
                             onClick={() => handleDownload(resume._id)}
+                            disabled={downloadingId === resume._id}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
                           >
-                            📥 Download
+                            {downloadingId === resume._id ? '...' : 'Download'}
                           </button>
                         </div>
                       </div>
@@ -181,105 +171,119 @@ const StudentDetailModal = ({ student, onClose }) => {
 
               {/* Profile Tab */}
               {activeTab === 'profile' && (
-                <div className="profile-details">
+                <div className="space-y-5">
                   {!profile ? (
-                    <div className="empty-state">
-                      <p>👤</p>
-                      <p>Profile not created yet</p>
+                    <div className="text-center py-16 text-gray-400">
+                      <div className="text-4xl mb-2">👤</div>
+                      <p className="text-sm">Profile not created yet</p>
                     </div>
                   ) : (
-                    <div className="profile-sections">
-                      {/* Contact Info */}
-                      <div className="profile-section">
-                        <h3>Contact Information</h3>
-                        <div className="profile-grid">
-                          <div className="profile-field">
-                            <label>Phone:</label>
-                            <span>{profile.phone || 'N/A'}</span>
+                    <>
+                      {/* Stats row */}
+                      <div className="grid grid-cols-4 gap-3">
+                        {[
+                          { label: 'Skills', count: profile.skills?.length || 0 },
+                          { label: 'Projects', count: profile.projects?.length || 0 },
+                          { label: 'Internships', count: profile.internships?.length || 0 },
+                          { label: 'Achievements', count: profile.achievements?.length || 0 },
+                        ].map(({ label, count }) => (
+                          <div key={label} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-200">
+                            <p className="text-xl font-bold text-gray-900">{count}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                           </div>
-                          <div className="profile-field">
-                            <label>Alternate Email:</label>
-                            <span>{profile.alternateEmail || 'N/A'}</span>
-                          </div>
+                        ))}
+                      </div>
+
+                      {/* Contact */}
+                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Contact</p>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Phone</span>
+                          <span className="font-medium text-gray-900">{profile.phone || '—'}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Alt Email</span>
+                          <span className="font-medium text-gray-900 truncate ml-4">{profile.alternateEmail || '—'}</span>
                         </div>
                       </div>
 
                       {/* Skills */}
-                      {profile.skills && profile.skills.length > 0 && (
-                        <div className="profile-section">
-                          <h3>Skills</h3>
-                          <div className="skills-tags">
-                            {profile.skills.map((skill, index) => (
-                              <span key={index} className="skill-tag">{skill}</span>
+                      {profile.skills?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Skills</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {profile.skills.map((skill, i) => (
+                              <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg border border-blue-100">{skill}</span>
                             ))}
                           </div>
                         </div>
                       )}
 
                       {/* Projects */}
-                      {profile.projects && profile.projects.length > 0 && (
-                        <div className="profile-section">
-                          <h3>Projects ({profile.projects.length})</h3>
-                          {profile.projects.map((project, index) => (
-                            <div key={index} className="profile-item">
-                              <h4>{project.title}</h4>
-                              <p>{project.description}</p>
-                            </div>
-                          ))}
+                      {profile.projects?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Projects</p>
+                          <div className="space-y-2">
+                            {profile.projects.map((p, i) => (
+                              <div key={i} className="bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
+                                <p className="text-sm font-semibold text-gray-900">{p.title}</p>
+                                {p.technologies && <p className="text-xs text-gray-500 mt-0.5">{p.technologies}</p>}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
                       {/* Internships */}
-                      {profile.internships && profile.internships.length > 0 && (
-                        <div className="profile-section">
-                          <h3>Internships ({profile.internships.length})</h3>
-                          {profile.internships.map((internship, index) => (
-                            <div key={index} className="profile-item">
-                              <h4>{internship.company}</h4>
-                              <p className="profile-item-subtitle">{internship.role}</p>
-                              <p>{internship.description}</p>
-                            </div>
-                          ))}
+                      {profile.internships?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Internships</p>
+                          <div className="space-y-2">
+                            {profile.internships.map((x, i) => (
+                              <div key={i} className="bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
+                                <p className="text-sm font-semibold text-gray-900">{x.company}</p>
+                                <p className="text-xs text-gray-500">{x.role}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
                       {/* Achievements */}
-                      {profile.achievements && profile.achievements.length > 0 && (
-                        <div className="profile-section">
-                          <h3>Achievements</h3>
-                          <ul className="profile-list">
-                            {profile.achievements.map((achievement, index) => (
-                              <li key={index}>{achievement}</li>
+                      {profile.achievements?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Achievements</p>
+                          <ul className="space-y-1">
+                            {profile.achievements.map((a, i) => (
+                              <li key={i} className="text-sm text-gray-700 flex gap-2">
+                                <span className="text-gray-400 flex-shrink-0">•</span>{a}
+                              </li>
                             ))}
                           </ul>
                         </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               )}
             </>
           )}
         </div>
-
-        {/* Preview Modal */}
-        {showPreview && (
-          <div className="preview-overlay" onClick={() => setShowPreview(false)}>
-            <div className="preview-container" onClick={(e) => e.stopPropagation()}>
-              <div className="preview-header-inner">
-                <h3>Resume Preview</h3>
-                <button className="close-btn" onClick={() => setShowPreview(false)}>✕</button>
-              </div>
-              <iframe
-                srcDoc={previewHtml}
-                title="Resume Preview"
-                className="preview-iframe-inner"
-              />
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+
+      {/* Preview overlay */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-60 flex items-center justify-center p-6" onClick={() => setShowPreview(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl h-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">Resume Preview</h3>
+              <button onClick={() => setShowPreview(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-lg">✕</button>
+            </div>
+            <iframe srcDoc={previewHtml} title="Resume Preview" className="flex-1 w-full border-0 rounded-b-xl" />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

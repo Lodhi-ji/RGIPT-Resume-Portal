@@ -13,8 +13,7 @@ const AdminDashboard = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [resetPasswordStudent, setResetPasswordStudent] = useState(null);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [batchFilter, setBatchFilter] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -49,32 +48,7 @@ const AdminDashboard = () => {
     setSelectedStudent(null);
   };
 
-  const handleResetPasswordClick = (student) => {
-    setResetPasswordStudent(student);
-  };
-
-  const handleCancelResetPassword = () => {
-    setResetPasswordStudent(null);
-  };
-
-  const handleConfirmResetPassword = async () => {
-    if (!resetPasswordStudent) return;
-
-    setIsResettingPassword(true);
-    try {
-      await api.post(`/admin/reset-student-password/${resetPasswordStudent._id}`);
-      alert('Password reset successful! A new password has been sent to the student\'s email.');
-      setResetPasswordStudent(null);
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to reset password';
-      alert(`Failed to reset password: ${errorMessage}`);
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
-  // Filter students based on search and department
+  // Filter students based on search, department and batch
   const filteredStudents = students.filter(student => {
     const matchesSearch = searchQuery === '' || 
       student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,12 +56,16 @@ const AdminDashboard = () => {
       student.rollNo?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesDepartment = departmentFilter === 'all' || student.branch === departmentFilter;
+    const matchesBatch = batchFilter === 'all' || student.graduationYear === batchFilter;
     
-    return matchesSearch && matchesDepartment;
+    return matchesSearch && matchesDepartment && matchesBatch;
   });
 
   // Get unique departments for filter
   const departments = ['all', ...new Set(students.map(s => s.branch).filter(Boolean))];
+
+  // Get unique batches (graduation years) sorted
+  const batches = ['all', ...new Set(students.map(s => s.graduationYear).filter(Boolean)).values()].sort();
 
   if (loading) {
     return (
@@ -264,6 +242,18 @@ const AdminDashboard = () => {
                     ))}
                   </select>
 
+                  {/* Batch Filter */}
+                  <select
+                    value={batchFilter}
+                    onChange={(e) => setBatchFilter(e.target.value)}
+                    className="px-4 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Batches</option>
+                    {batches.filter(b => b !== 'all').map(year => (
+                      <option key={year} value={year}>Batch {year}</option>
+                    ))}
+                  </select>
+
                   {/* Add Student Button */}
                   <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md whitespace-nowrap transition-colors duration-200">
                     + Add Student
@@ -340,16 +330,6 @@ const AdminDashboard = () => {
                           >
                             View
                           </button>
-                          <button className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold rounded-md transition-colors duration-200">
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => handleResetPasswordClick(student)}
-                            className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold rounded-md transition-colors duration-200"
-                            title="Reset student password"
-                          >
-                            Reset Password
-                          </button>
                           <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors duration-200">
                             Delete
                           </button>
@@ -407,43 +387,6 @@ const AdminDashboard = () => {
           />
         )}
 
-        {/* Reset Password Confirmation Dialog */}
-        {resetPasswordStudent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                  Reset Password
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to reset the password for{' '}
-                  <span className="font-semibold">{resetPasswordStudent.name}</span>?
-                </p>
-                <p className="text-sm text-gray-500 mb-6">
-                  A new randomly generated password will be sent to{' '}
-                  <span className="font-semibold">{resetPasswordStudent.instituteEmail}</span>.
-                  The student's current password will be immediately invalidated.
-                </p>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={handleCancelResetPassword}
-                    disabled={isResettingPassword}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmResetPassword}
-                    disabled={isResettingPassword}
-                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isResettingPassword ? 'Resetting...' : 'Reset Password'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
