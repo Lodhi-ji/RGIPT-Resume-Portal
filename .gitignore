@@ -8,6 +8,8 @@ backend/node_modules/
 backend/.env
 frontend/.env
 
+MD\ files/
+.kiro/
 # Build outputs
 frontend/dist/
 frontend/build/
