@@ -14,6 +14,7 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [batchFilter, setBatchFilter] = useState('all');
+  const [deleteModal, setDeleteModal] = useState({ open: false, student: null, loading: false });
 
   useEffect(() => {
     fetchData();
@@ -38,6 +39,23 @@ const AdminDashboard = () => {
   const handleUploadComplete = () => {
     setShowUpload(false);
     fetchData();
+  };
+
+  const handleDeleteStudent = async (student) => {
+    setDeleteModal({ open: true, student, loading: false });
+  };
+
+  const confirmDelete = async () => {
+    const student = deleteModal.student;
+    setDeleteModal(prev => ({ ...prev, loading: true }));
+    try {
+      await api.delete(`/admin/students/${student._id}`);
+      setStudents(prev => prev.filter(s => s._id !== student._id));
+      setDeleteModal({ open: false, student: null, loading: false });
+    } catch (error) {
+      setDeleteModal(prev => ({ ...prev, loading: false }));
+      alert(error.response?.data?.error?.message || 'Failed to delete student.');
+    }
   };
 
   const handleStudentClick = (student) => {
@@ -330,7 +348,7 @@ const AdminDashboard = () => {
                           >
                             View
                           </button>
-                          <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors duration-200">
+                          <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors duration-200" onClick={() => handleDeleteStudent(student)}>
                             Delete
                           </button>
                         </div>
@@ -385,6 +403,60 @@ const AdminDashboard = () => {
             student={selectedStudent}
             onClose={handleCloseStudentModal}
           />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => !deleteModal.loading && setDeleteModal({ open: false, student: null, loading: false })}
+            />
+            {/* Modal */}
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+              {/* Icon */}
+              <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mx-auto mb-4">
+                <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 text-center mb-1">Delete Student</h3>
+              <p className="text-sm text-gray-500 text-center mb-1">
+                You are about to permanently delete
+              </p>
+              <p className="text-base font-semibold text-gray-800 text-center mb-2">
+                {deleteModal.student?.name}
+              </p>
+              <p className="text-xs text-gray-400 text-center mb-6">
+                This will remove all their data including profile and resumes. This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteModal({ open: false, student: null, loading: false })}
+                  disabled={deleteModal.loading}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleteModal.loading}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deleteModal.loading ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

@@ -482,8 +482,8 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                     </h2>
                     <div className="grid grid-cols-2 gap-4">
                       {[
-                        { value: 'template1', name: 'Modern' },
-                        { value: 'template2', name: 'LaTeX (RGIPT)' }
+                        { value: 'template1', name: 'Template 1' },
+                        { value: 'template2', name: 'Template 2' }
                       ].map((template) => (
                         <button
                           key={template.value}

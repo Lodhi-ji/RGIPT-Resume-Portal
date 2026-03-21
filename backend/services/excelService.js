@@ -135,7 +135,7 @@ class ExcelService {
 
   // Transform Excel row to Student object
   async transformToStudent(excelRow) {
-    const rollNo = excelRow.rollNo.toString().trim();
+    const rollNo = excelRow.rollNo.toString().trim().toUpperCase();
 
     return {
       name: excelRow.name.trim(),
@@ -189,7 +189,7 @@ class ExcelService {
 
         // Check for duplicate rollNo - UPDATE instead of failing
         const existingByRollNo = await Student.findOne({ 
-          rollNo: row.rollNo.toString().trim() 
+          rollNo: row.rollNo.toString().trim().toUpperCase()
         });
         
         if (existingByRollNo) {

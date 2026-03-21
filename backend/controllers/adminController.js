@@ -506,6 +506,39 @@ const resetStudentPassword = async (req, res) => {
   }
 };
 
+const deleteStudent = async (req, res) => {
+  try {
+    const Student = require('../models/Student');
+    const Profile = require('../models/Profile');
+    const ResumeVersion = require('../models/ResumeVersion');
+    const { studentId } = req.params;
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Student not found', code: 'STUDENT_NOT_FOUND' }
+      });
+    }
+
+    // Delete associated data
+    await Profile.deleteOne({ studentId });
+    await ResumeVersion.deleteMany({ studentId });
+    await Student.findByIdAndDelete(studentId);
+
+    res.status(200).json({
+      success: true,
+      message: `Student ${student.name} deleted successfully`
+    });
+  } catch (error) {
+    console.error('Delete student error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Server error', code: 'SERVER_ERROR' }
+    });
+  }
+};
+
 module.exports = {
   uploadStudents,
   getAllStudents,
@@ -515,5 +548,6 @@ module.exports = {
   getResumePreview,
   downloadResumePDF,
   getStudentProfile,
-  resetStudentPassword
+  resetStudentPassword,
+  deleteStudent
 };

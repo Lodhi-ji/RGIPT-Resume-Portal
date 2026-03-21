@@ -10,7 +10,8 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Roll number is required'],
     unique: true,
-    trim: true
+    trim: true,
+    uppercase: true
   },
   instituteEmail: {
     type: String,
