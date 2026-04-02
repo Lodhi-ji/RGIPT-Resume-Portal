@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Student = require('../models/Student');
-const { generateRandomPassword, hashPassword } = require('../utils/helpers');
+const Otp = require('../models/Otp');
+const { generateOtp, storeOtp } = require('../utils/helpers');
 const emailService = require('../services/emailService');
 const auditLogger = require('../utils/auditLogger');
 
@@ -56,8 +57,8 @@ const login = async (req, res) => {
       return res.status(401).json({
         success: false,
         error: {
-          message: 'Invalid credentials',
-          code: 'INVALID_CREDENTIALS'
+          message: 'Wrong password. Please try again.',
+          code: 'WRONG_PASSWORD'
         }
       });
     }
@@ -73,7 +74,6 @@ const login = async (req, res) => {
         name: student.name,
         email: student.instituteEmail,
         role: student.role,
-        isFirstLogin: student.isFirstLogin,
         passwordSet: student.passwordSet
       }
     });
@@ -190,10 +190,9 @@ const changePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update password and first login flag
+    // Update password
     await Student.findByIdAndUpdate(req.user.id, {
-      password: hashedPassword,
-      isFirstLogin: false
+      password: hashedPassword
     });
 
     // Log password change
@@ -229,8 +228,7 @@ const getMe = async (req, res) => {
         id: student._id,
         name: student.name,
         email: student.instituteEmail,
-        role: student.role,
-        isFirstLogin: student.isFirstLogin
+        role: student.role
       }
     });
   } catch (error) {
@@ -245,77 +243,87 @@ const getMe = async (req, res) => {
   }
 };
 
-// @desc    Activate student account via email
-// @route   POST /api/auth/activate-account
+// @desc    Send OTP for account activation or password reset
+// @route   POST /api/auth/send-otp
 // @access  Public
-const activateAccount = async (req, res) => {
+const sendOtp = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, purpose } = req.body;
 
-    if (!email) {
+    // Validate required fields
+    if (!email || !purpose) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Please provide an email address',
-          code: 'MISSING_EMAIL'
+          message: 'Please provide email and purpose',
+          code: 'MISSING_FIELDS'
         }
       });
     }
 
-    // Find student by email
-    const student = await Student.findOne({ 
-      instituteEmail: email.toLowerCase() 
-    });
+    // Validate purpose
+    const validPurposes = ['activation', 'password_reset'];
+    if (!validPurposes.includes(purpose)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid purpose. Must be one of: activation, password_reset',
+          code: 'INVALID_PURPOSE'
+        }
+      });
+    }
 
-    // Check if profile exists
+    // Look up student
+    const student = await Student.findOne({ instituteEmail: email.toLowerCase() });
+
     if (!student) {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'No user found. Please contact administration.',
-          code: 'PROFILE_NOT_FOUND'
+          message: 'No account found with this email address. Please contact administration.',
+          code: 'USER_NOT_FOUND'
         }
       });
     }
 
-    // Check if already activated
-    if (student.passwordSet) {
+    // Purpose-specific checks
+    if (purpose === 'activation' && student.passwordSet === true) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Account already activated. Use \'Forgot Password\' if needed.',
+          message: "Account already activated. Use 'Forgot Password' to reset your password.",
           code: 'ALREADY_ACTIVATED'
         }
       });
     }
 
-    // Generate new password
-    const newPassword = generateRandomPassword();
-    const hashedPassword = await hashPassword(newPassword);
+    if (purpose === 'password_reset' && student.passwordSet === false) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: "Account not yet activated. Please use 'Sign Up / Activate Account' first.",
+          code: 'NOT_ACTIVATED'
+        }
+      });
+    }
 
-    // Update password and set passwordSet flag
-    await Student.findByIdAndUpdate(student._id, {
-      password: hashedPassword,
-      passwordSet: true,
-      isFirstLogin: true
-    });
+    // Generate and store OTP
+    const otp = generateOtp();
+    await storeOtp(email.toLowerCase(), otp, purpose);
 
-    // Send activation email with new password
-    const emailResult = await emailService.sendActivationEmail({
+    // Send OTP email
+    const emailResult = await emailService.sendOtpEmail({
       studentName: student.name,
       email: student.instituteEmail,
-      password: newPassword,
-      loginUrl: process.env.PORTAL_URL
+      otp,
+      purpose
     });
-
-    // Log the activation
-    await auditLogger.logAccountActivation(student._id, email);
 
     if (!emailResult.success) {
       return res.status(500).json({
         success: false,
         error: {
-          message: 'Account activated but email delivery failed. Please contact support.',
+          message: 'Failed to send OTP email. Please try again later.',
           code: 'EMAIL_DELIVERY_FAILED'
         }
       });
@@ -323,10 +331,10 @@ const activateAccount = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Account activated successfully! Check your email for login credentials.'
+      message: 'OTP sent to your email address. It expires in 10 minutes.'
     });
   } catch (error) {
-    console.error('Account activation error:', error);
+    console.error('Send OTP error:', error);
     res.status(500).json({
       success: false,
       error: {
@@ -337,82 +345,85 @@ const activateAccount = async (req, res) => {
   }
 };
 
-// @desc    Request password reset via email (for activated accounts)
-// @route   POST /api/auth/forgot-password
+// @desc    Verify OTP and set new password (activation or password reset)
+// @route   POST /api/auth/verify-otp-set-password
 // @access  Public
-const forgotPassword = async (req, res) => {
+const verifyOtpSetPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, otp, password, purpose } = req.body;
 
-    if (!email) {
+    // Validate required fields
+    if (!email || !otp || !password || !purpose) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Please provide an email address',
-          code: 'MISSING_EMAIL'
+          message: 'Please provide email, otp, password, and purpose',
+          code: 'MISSING_FIELDS'
         }
       });
     }
 
-    // Find student by email
-    const student = await Student.findOne({ 
-      instituteEmail: email.toLowerCase() 
-    });
-
-    // Always return success to prevent email enumeration
-    const genericMessage = 'If the email exists in our system, a password reset link has been sent.';
-
-    if (!student) {
-      // Log failed attempt
-      await auditLogger.logPasswordResetRequest(email, false, 'Email not found');
-      
-      return res.status(200).json({
-        success: true,
-        message: genericMessage
-      });
-    }
-
-    // Check if account is activated
-    if (!student.passwordSet) {
+    // Validate password length
+    if (password.length < 6) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Account not activated. Please use \'Sign Up\' first.',
-          code: 'NOT_ACTIVATED'
+          message: 'Password must be at least 6 characters long.',
+          code: 'WEAK_PASSWORD'
         }
       });
     }
 
-    // Generate new password
-    const newPassword = generateRandomPassword();
-    const hashedPassword = await hashPassword(newPassword);
+    // Find OTP document
+    const otpDoc = await Otp.findOne({ email: email.toLowerCase(), purpose });
 
-    // Update password in database
-    await Student.findByIdAndUpdate(student._id, {
-      password: hashedPassword
-    });
+    if (!otpDoc) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'OTP has expired or is invalid. Please request a new one.',
+          code: 'OTP_EXPIRED_OR_INVALID'
+        }
+      });
+    }
 
-    // Send email with new password
-    const emailResult = await emailService.sendPasswordResetEmail({
-      studentName: student.name,
-      email: student.instituteEmail,
-      password: newPassword,
-      loginUrl: process.env.PORTAL_URL
-    });
+    // Verify OTP
+    const isOtpValid = await bcrypt.compare(otp, otpDoc.otpHash);
 
-    // Log the reset
-    await auditLogger.logPasswordResetRequest(
-      email, 
-      emailResult.success,
-      emailResult.success ? null : emailResult.error
+    if (!isOtpValid) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Incorrect OTP. Please try again.',
+          code: 'OTP_INVALID'
+        }
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Update student record
+    await Student.findOneAndUpdate(
+      { instituteEmail: email.toLowerCase() },
+      { password: hashedPassword, passwordSet: true }
     );
+
+    // Delete OTP doc
+    await Otp.deleteOne({ email: email.toLowerCase(), purpose });
+
+    // Return purpose-specific success message
+    const message = purpose === 'activation'
+      ? 'Account activated successfully. You can now log in.'
+      : 'Password reset successfully. You can now log in.';
 
     res.status(200).json({
       success: true,
-      message: genericMessage
+      message
     });
   } catch (error) {
-    console.error('Password reset error:', error);
+    console.error('Verify OTP set password error:', error);
     res.status(500).json({
       success: false,
       error: {
@@ -427,6 +438,6 @@ module.exports = {
   login,
   changePassword,
   getMe,
-  activateAccount,
-  forgotPassword
+  sendOtp,
+  verifyOtpSetPassword
 };

@@ -483,7 +483,10 @@ const generateResumePreview = async (req, res) => {
       positionsOfResponsibility: selectedPositionsOfResponsibility,
       extracurricular: profile.extracurricular,
       courses: selectedCourses,
-      socialLinks: selectedSocialLinks
+      socialLinks: selectedSocialLinks,
+      dob: student.dob,
+      gender: student.gender,
+      objective: profile.objective || ''
     };
 
     // Load template

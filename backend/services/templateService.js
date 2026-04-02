@@ -192,6 +192,34 @@ class TemplateService {
   }
 
   // Replace placeholders in template
+  // Format a Date object as dd/mm/yyyy string
+  formatDobForDisplay(date) {
+    if (!date) return null;
+    const d = new Date(date);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // Build the DOB/Gender line HTML for the header right column
+  buildDobGenderHtml(data, sectionsEnabled) {
+    const showDob = sectionsEnabled?.dob !== false && data.dob;
+    const showGender = sectionsEnabled?.gender !== false && data.gender;
+    const dobStr = showDob ? `DOB: ${this.formatDobForDisplay(data.dob)}` : null;
+    const genderStr = showGender ? `Gender: ${data.gender}` : null;
+    if (dobStr && genderStr) return `<div>${dobStr} || ${genderStr}</div>`;
+    if (dobStr) return `<div>${dobStr}</div>`;
+    if (genderStr) return `<div>${genderStr}</div>`;
+    return '';
+  }
+
+  // Build the Objective section HTML for the resume body
+  buildObjectiveHtml(data, sectionsEnabled) {
+    if (sectionsEnabled?.objective === false || !data.objective || data.objective.trim() === '') return '';
+    return `<div class="section-wrapper"><div class="section-heading">Objective</div><div class="item"><p style="text-align: justify;">${data.objective}</p></div></div>`;
+  }
+
   async replacePlaceholders(template, data, sectionsEnabled, templateName) {
     let html = template;
 
@@ -234,7 +262,9 @@ class TemplateService {
       html = html.replace(/{{personalEmailHtml}}/g, data.alternateEmail ? `<div><a href="mailto:${data.alternateEmail}">${data.alternateEmail}</a></div>` : '');
       html = html.replace(/{{instituteEmailHtml}}/g, data.email ? `<div><a href="mailto:${data.email}">${data.email}</a></div>` : '');
       
+      html = html.replace(/{{dobGenderHtml}}/g, this.buildDobGenderHtml(data, sectionsEnabled));
       html = html.replace(/{{socialLinksHtml}}/g, sectionsEnabled.socialLinks ? this.renderTemplate2SocialLinksInline(data.socialLinks) : '');
+      html = html.replace(/{{objectiveHtml}}/g, this.buildObjectiveHtml(data, sectionsEnabled));
       html = html.replace(/{{educationHtml}}/g, sectionsEnabled.education !== false ? (templateName === 'template1' ? this.renderTemplate1Education(data) : this.renderTemplate2Education(data)) : '');
       html = html.replace(/{{internshipsHtml}}/g, sectionsEnabled.internships !== false ? this.renderTemplate2Internships(data.internships) : '');
       html = html.replace(/{{projectsHtml}}/g, sectionsEnabled.projects !== false ? this.renderTemplate2Projects(data.projects) : '');

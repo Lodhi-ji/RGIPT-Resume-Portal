@@ -86,7 +86,8 @@ const ProfilePage = () => {
 
       {/* Editable Profile Form */}
       <ProfileForm 
-        profile={profile} 
+        profile={profile}
+        student={student}
         onUpdate={handleProfileUpdate}
       />
     </div>

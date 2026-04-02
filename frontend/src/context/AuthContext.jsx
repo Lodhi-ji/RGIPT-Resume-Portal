@@ -26,24 +26,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const updateIsFirstLogin = (value) => {
-    if (user) {
-      const updatedUser = { ...user, isFirstLogin: value };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
-  };
-
   const value = {
     user,
     login,
     logout,
-    updateIsFirstLogin,
     loading: false,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
     isStudent: user?.role === 'student',
-    isFirstLogin: user?.isFirstLogin || false,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

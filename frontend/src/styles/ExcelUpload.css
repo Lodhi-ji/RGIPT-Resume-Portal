@@ -155,9 +155,26 @@
 
 .result-summary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
   margin-bottom: 24px;
+}
+
+.summary-item.updated {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.student-warning {
+  font-size: 12px;
+  color: #856404;
+  margin-top: 4px;
+}
+
+.error-reasons {
+  font-size: 13px;
+  color: #721c24;
+  margin-top: 4px;
 }
 
 .summary-item {
@@ -261,6 +278,6 @@
 
 @media (max-width: 768px) {
   .result-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }

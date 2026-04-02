@@ -104,6 +104,15 @@ const studentSchema = new mongoose.Schema({
     type: String,
     enum: ['student', 'admin'],
     default: 'student'
+  },
+  dob: {
+    type: Date,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female'],
+    default: null
   }
 }, {
   timestamps: true

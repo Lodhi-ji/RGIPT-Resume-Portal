@@ -5,6 +5,37 @@ const { isValidEmail } = require('../utils/helpers');
 const auditLogger = require('../utils/auditLogger');
 
 class ExcelService {
+  // Parse DOB value from Excel — handles dd/mm/yyyy string or Excel serial number
+  parseDob(value) {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number') {
+      // Excel serial date: days since 1900-01-01 (with Lotus 1-2-3 leap year bug offset)
+      return new Date((value - 25569) * 86400 * 1000);
+    }
+    if (typeof value === 'string') {
+      const parts = value.trim().split('/');
+      if (parts.length === 3) {
+        const dd = parseInt(parts[0], 10);
+        const mm = parseInt(parts[1], 10);
+        const yyyy = parseInt(parts[2], 10);
+        if (!isNaN(dd) && !isNaN(mm) && !isNaN(yyyy)) {
+          return new Date(yyyy, mm - 1, dd);
+        }
+      }
+    }
+    if (value instanceof Date) return value;
+    return null;
+  }
+
+  // Parse gender value — normalises to 'Male' or 'Female', null otherwise
+  parseGender(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const normalised = String(value).trim().toLowerCase();
+    if (normalised === 'male') return 'Male';
+    if (normalised === 'female') return 'Female';
+    return null;
+  }
+
   // Parse Excel file buffer (async, using exceljs)
   async parseExcelFile(buffer) {
     try {
@@ -181,7 +212,9 @@ class ExcelService {
       },
       password: null,  // No password until student activates account
       passwordSet: false,  // Account not activated yet
-      role: 'student'
+      role: 'student',
+      dob: this.parseDob(excelRow.dob),
+      gender: this.parseGender(excelRow.gender)
     };
   }
 
@@ -238,14 +271,20 @@ class ExcelService {
               });
             }
             
-            results.success.push({
+            const updatedResult = {
               row: i + 2,
               rollNo: existingByRollNo.rollNo,
               name: studentData.name,
               email: studentData.instituteEmail,
               action: 'updated',
-              status: 'Student data updated'
-            });
+              status: 'Student data updated',
+              warnings: []
+            };
+            const rawGender = row.gender;
+            if (rawGender !== null && rawGender !== undefined && String(rawGender).trim() !== '' && studentData.gender === null) {
+              updatedResult.warnings.push(`Unrecognised gender value "${rawGender}" — stored as null`);
+            }
+            results.success.push(updatedResult);
             continue;
           } catch (error) {
             results.failed.push({
@@ -294,14 +333,20 @@ class ExcelService {
           await auditLogger.logProfileCreation(student._id, adminId);
         }
 
-        results.success.push({
+        const createdResult = {
           row: i + 2,
           rollNo: student.rollNo,
           name: student.name,
           email: student.instituteEmail,
           action: 'created',
-          status: 'Account created - Student must activate via email'
-        });
+          status: 'Account created - Student must activate via email',
+          warnings: []
+        };
+        const rawGender = row.gender;
+        if (rawGender !== null && rawGender !== undefined && String(rawGender).trim() !== '' && studentData.gender === null) {
+          createdResult.warnings.push(`Unrecognised gender value "${rawGender}" — stored as null`);
+        }
+        results.success.push(createdResult);
 
       } catch (error) {
         results.failed.push({

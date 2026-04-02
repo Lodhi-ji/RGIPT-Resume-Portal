@@ -196,7 +196,11 @@ const profileSchema = new mongoose.Schema({
   extracurricular: [{
     type: String,
     trim: true
-  }]
+  }],
+  objective: {
+    type: String,
+    default: ''
+  }
 }, {
   timestamps: true
 });

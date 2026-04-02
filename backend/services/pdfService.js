@@ -124,7 +124,10 @@ class PDFService {
         achievements: selectedAchievements,
         positionsOfResponsibility: selectedPositions,
         courses: selectedCourses,
-        socialLinks: selectedSocialLinks
+        socialLinks: selectedSocialLinks,
+        dob: student.dob,
+        gender: student.gender,
+        objective: profile.objective || ''
       };
 
       return {
@@ -180,8 +183,7 @@ class PDFService {
           '--disable-extensions',
           '--disable-background-networking',
           '--no-first-run',
-          '--no-zygote',
-          '--single-process'
+          '--no-zygote'
         ],
         timeout: 30000  // 30 seconds to launch
       };
@@ -256,7 +258,7 @@ class PDFService {
       console.log('HTML content loaded');
 
       // Step 7: Generate PDF
-      const pdfBuffer = await page.pdf({
+      const pdfData = await page.pdf({
         format: 'A4',
         printBackground: true,
         margin: {
@@ -266,6 +268,8 @@ class PDFService {
           left: '0px'
         }
       });
+      // page.pdf() returns Uint8Array in Puppeteer v22+, convert to Buffer for res.send()
+      const pdfBuffer = Buffer.from(pdfData);
       console.log(`PDF generated successfully. Size: ${pdfBuffer.length} bytes`);
 
       // Step 8: Cleanup

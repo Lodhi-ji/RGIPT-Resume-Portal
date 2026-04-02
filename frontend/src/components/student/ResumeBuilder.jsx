@@ -83,6 +83,26 @@ const A4Preview = ({ html }) => {
   );
 };
 
+const formatSectionName = (key) => {
+  const names = {
+    education: 'Education',
+    projects: 'Projects',
+    internships: 'Internships',
+    skills: 'Skills',
+    achievements: 'Achievements',
+    certifications: 'Certifications',
+    positionsOfResponsibility: 'Positions of Responsibility',
+    courses: 'Courses',
+    publications: 'Publications',
+    extracurricular: 'Extracurricular',
+    socialLinks: 'Social Links',
+    dob: 'DOB',
+    gender: 'Gender',
+    objective: 'Objective',
+  };
+  return names[key] || key.charAt(0).toUpperCase() + key.slice(1);
+};
+
 const ResumeBuilder = ({ resume, profile, onClose }) => {
   const [activeTab, setActiveTab] = useState('basic');
   const [formData, setFormData] = useState({
@@ -99,6 +119,9 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       courses: true,
       publications: true,
       extracurricular: true,
+      dob: true,
+      gender: true,
+      objective: true,
     },
     selectedProjects: [],
     selectedInternships: [],
@@ -131,6 +154,9 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
           courses: resume.sectionsEnabled?.courses ?? true,
           publications: resume.sectionsEnabled?.publications ?? true,
           extracurricular: resume.sectionsEnabled?.extracurricular ?? true,
+          dob: resume.sectionsEnabled?.dob ?? true,
+          gender: resume.sectionsEnabled?.gender ?? true,
+          objective: resume.sectionsEnabled?.objective ?? true,
         },
         selectedProjects: resume.selectedProjects?.map(id => id.toString()) || [],
         selectedInternships: resume.selectedInternships?.map(id => id.toString()) || [],
@@ -797,13 +823,6 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
 
     </div>
   );
-};
-
-const formatSectionName = (name) => {
-  return name
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
 };
 
 export default ResumeBuilder;

@@ -85,6 +85,8 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
                     <ul>
                       <li>10th year, 12th year</li>
                       <li>10th board, 12th board (e.g. CBSE, MP Board)</li>
+                      <li>dob — Date of Birth (format: dd/mm/yyyy, e.g. 22/08/2004)</li>
+                      <li>gender — Male or Female</li>
                     </ul>
                   </li>
                 </ul>
@@ -132,8 +134,12 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
                   <span className="value">{result.summary.total}</span>
                 </div>
                 <div className="summary-item success">
-                  <span className="label">Successful:</span>
-                  <span className="value">{result.summary.successful}</span>
+                  <span className="label">Created:</span>
+                  <span className="value">{result.summary.created}</span>
+                </div>
+                <div className="summary-item updated">
+                  <span className="label">Updated:</span>
+                  <span className="value">{result.summary.updated}</span>
                 </div>
                 <div className="summary-item failed">
                   <span className="label">Failed:</span>
@@ -141,28 +147,44 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
                 </div>
               </div>
 
-              {result.successfulStudents.length > 0 && (
+              {result.createdStudents?.length > 0 && (
                 <div className="success-list">
-                  <h4>Successfully Created Students:</h4>
+                  <h4>✅ Newly Created ({result.createdStudents.length})</h4>
                   <div className="student-list">
-                    {result.successfulStudents.map((student, index) => (
+                    {result.createdStudents.map((student, index) => (
                       <div key={index} className="student-item">
-                        <strong>{student.name}</strong> ({student.rollNo})
-                        <br />
-                        <small>Password: {student.defaultPassword}</small>
+                        <strong>{student.name}</strong> — {student.rollNo}
+                        {student.warning && <div className="student-warning">⚠️ {student.warning}</div>}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {result.failedRows.length > 0 && (
+              {result.updatedStudents?.length > 0 && (
+                <div className="success-list">
+                  <h4>🔄 Updated ({result.updatedStudents.length})</h4>
+                  <div className="student-list">
+                    {result.updatedStudents.map((student, index) => (
+                      <div key={index} className="student-item">
+                        <strong>{student.name}</strong> — {student.rollNo}
+                        {student.warning && <div className="student-warning">⚠️ {student.warning}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.failedRows?.length > 0 && (
                 <div className="failed-list">
-                  <h4>Failed Rows:</h4>
+                  <h4>❌ Failed ({result.failedRows.length})</h4>
                   <div className="error-list">
                     {result.failedRows.map((failed, index) => (
                       <div key={index} className="error-item">
-                        <strong>Row {failed.row}:</strong> {failed.errors.join(', ')}
+                        <strong>Row {failed.row}</strong>
+                        {failed.data?.name && <span> — {failed.data.name}</span>}
+                        {failed.data?.rollNo && <span> ({failed.data.rollNo})</span>}
+                        <div className="error-reasons">{failed.errors.join(', ')}</div>
                       </div>
                     ))}
                   </div>

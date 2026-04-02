@@ -57,6 +57,18 @@ const resumeVersionSchema = new mongoose.Schema({
     socialLinks: {
       type: Boolean,
       default: true
+    },
+    dob: {
+      type: Boolean,
+      default: true
+    },
+    gender: {
+      type: Boolean,
+      default: true
+    },
+    objective: {
+      type: Boolean,
+      default: true
     }
   },
   selectedProjects: [{

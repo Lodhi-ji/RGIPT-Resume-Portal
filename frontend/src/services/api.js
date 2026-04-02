@@ -25,8 +25,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't redirect on 401 for blob requests (PDF downloads)
-    if (error.response?.status === 401 && error.config?.responseType !== 'blob') {
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    const isBlobRequest = error.config?.responseType === 'blob';
+    // Only redirect on 401 for authenticated requests, not login attempts or blob downloads
+    if (error.response?.status === 401 && !isLoginRequest && !isBlobRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

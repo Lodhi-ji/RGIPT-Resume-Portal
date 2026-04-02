@@ -4,6 +4,7 @@ import { validateProfileForm } from '../../utils/validation';
 
 const TABS = [
   { id: 'contact',      label: 'Contact',       icon: '👤' },
+  { id: 'objective',    label: 'Objective',      icon: '🎯' },
   { id: 'skills',       label: 'Skills',         icon: '🛠️' },
   { id: 'projects',     label: 'Projects',       icon: '💻' },
   { id: 'internships',  label: 'Internships',    icon: '🏢' },
@@ -16,7 +17,7 @@ const TABS = [
   { id: 'social',       label: 'Social Links',   icon: '🔗' },
 ];
 
-const ProfileForm = ({ profile, onUpdate }) => {
+const ProfileForm = ({ profile, student, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('contact');
   const [formData, setFormData] = useState({
     phone: profile?.phone || '',
@@ -31,6 +32,7 @@ const ProfileForm = ({ profile, onUpdate }) => {
     courses: profile?.courses || [],
     socialLinks: profile?.socialLinks || [],
     extracurricular: profile?.extracurricular || [],
+    objective: profile?.objective || '',
   });
 
   const [newSkill, setNewSkill] = useState('');
@@ -175,6 +177,15 @@ const ProfileForm = ({ profile, onUpdate }) => {
     { value: 'link', label: 'Custom Link' },
   ];
 
+  const formatDob = (dob) => {
+    if (!dob) return 'Not provided';
+    const d = new Date(dob);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const inputCls = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors';
   const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
   const cardCls = 'bg-gray-50 rounded-lg p-5 border border-gray-200 space-y-4';
@@ -255,7 +266,35 @@ const ProfileForm = ({ profile, onUpdate }) => {
                   <label className={labelCls}>Alternate Email</label>
                   <input type="email" name="alternateEmail" value={formData.alternateEmail} onChange={handleChange} placeholder="your.email@example.com" className={inputCls} />
                 </div>
+                <div>
+                  <label className={labelCls}>Date of Birth <span className="text-xs text-gray-400 font-normal">(set by admin)</span></label>
+                  <div className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 text-sm border border-gray-200">
+                    {formatDob(student?.dob)}
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Gender <span className="text-xs text-gray-400 font-normal">(set by admin)</span></label>
+                  <div className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 text-sm border border-gray-200">
+                    {student?.gender || 'Not provided'}
+                  </div>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* OBJECTIVE */}
+          {activeTab === 'objective' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Career Objective</h3>
+              <textarea
+                name="objective"
+                value={formData.objective}
+                onChange={handleChange}
+                placeholder="Write a brief career objective..."
+                rows={6}
+                className={inputCls}
+              />
+              <p className="text-xs text-gray-400">This will appear before the Education section in your resume when enabled.</p>
             </div>
           )}
 

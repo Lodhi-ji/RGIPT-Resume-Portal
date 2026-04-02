@@ -41,14 +41,16 @@ class EmailService {
     return template;
   }
 
-  async sendActivationEmail({ studentName, email, password, loginUrl }) {
+  async sendOtpEmail({ studentName, email, otp, purpose, loginUrl }) {
     if (!this.initialized) await this.initialize();
 
+    const purposeLabel = purpose === 'activation' ? 'Account Activation' : 'Password Reset';
+
     try {
-      const html = await this.loadTemplate('activation', {
+      const html = await this.loadTemplate('otp', {
         studentName,
-        email,
-        password,
+        otp,
+        purposeLabel,
         loginUrl: loginUrl || process.env.PORTAL_URL,
         institutionName: process.env.INSTITUTION_NAME || 'RGIPT',
         supportEmail: process.env.SUPPORT_EMAIL || 'support@rgipt.ac.in'
@@ -57,68 +59,17 @@ class EmailService {
       const info = await this.transporter.sendMail({
         from: process.env.SMTP_FROM,
         to: email,
-        subject: 'RGIPT Resume Portal - Account Activation',
+        subject: `RGIPT Resume Portal - OTP for ${purposeLabel}`,
         html
       });
 
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('Failed to send activation email:', error);
+      console.error('Failed to send OTP email:', error);
       return { success: false, error: error.message };
     }
   }
 
-  async sendPasswordResetEmail({ studentName, email, password, loginUrl }) {
-    if (!this.initialized) await this.initialize();
-
-    try {
-      const html = await this.loadTemplate('password-reset', {
-        studentName,
-        password,
-        loginUrl: loginUrl || process.env.PORTAL_URL,
-        institutionName: process.env.INSTITUTION_NAME || 'RGIPT',
-        supportEmail: process.env.SUPPORT_EMAIL || 'support@rgipt.ac.in'
-      });
-
-      const info = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: email,
-        subject: 'RGIPT Resume Portal - Password Reset',
-        html
-      });
-
-      return { success: true, messageId: info.messageId };
-    } catch (error) {
-      console.error('Failed to send password reset email:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  async sendAdminResetEmail({ studentName, email, password, loginUrl }) {
-    if (!this.initialized) await this.initialize();
-
-    try {
-      const html = await this.loadTemplate('admin-reset', {
-        studentName,
-        password,
-        loginUrl: loginUrl || process.env.PORTAL_URL,
-        institutionName: process.env.INSTITUTION_NAME || 'RGIPT',
-        supportEmail: process.env.SUPPORT_EMAIL || 'support@rgipt.ac.in'
-      });
-
-      const info = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: email,
-        subject: 'RGIPT Resume Portal - Password Reset by Administrator',
-        html
-      });
-
-      return { success: true, messageId: info.messageId };
-    } catch (error) {
-      console.error('Failed to send admin reset email:', error);
-      return { success: false, error: error.message };
-    }
-  }
 }
 
 module.exports = new EmailService();

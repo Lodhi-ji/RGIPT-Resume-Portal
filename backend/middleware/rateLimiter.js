@@ -85,7 +85,57 @@ function clearRateLimit(email) {
   rateLimitStore.delete(email.toLowerCase());
 }
 
+// In-memory store for OTP rate limiting (IP-based)
+const otpRateLimitStore = new Map();
+const OTP_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const OTP_MAX_REQUESTS = 5;
+
+// Cleanup expired OTP rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of otpRateLimitStore.entries()) {
+    if (now > data.windowExpiry) {
+      otpRateLimitStore.delete(ip);
+    }
+  }
+}, CLEANUP_INTERVAL);
+
+/**
+ * Rate limit middleware for OTP endpoints
+ * Limits to 5 requests per IP per 15-minute window
+ */
+function otpRateLimiter(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  const limitData = otpRateLimitStore.get(ip);
+
+  if (!limitData || now > limitData.windowExpiry) {
+    otpRateLimitStore.set(ip, {
+      count: 1,
+      windowExpiry: now + OTP_WINDOW_MS
+    });
+    return next();
+  }
+
+  if (limitData.count >= OTP_MAX_REQUESTS) {
+    const retryAfter = Math.ceil((limitData.windowExpiry - now) / 1000);
+    return res.status(429).json({
+      success: false,
+      error: {
+        message: 'Too many OTP requests. Please try again later.',
+        code: 'RATE_LIMIT_EXCEEDED',
+        retryAfter
+      }
+    });
+  }
+
+  limitData.count++;
+  otpRateLimitStore.set(ip, limitData);
+  next();
+}
+
 module.exports = {
   passwordResetRateLimiter,
-  clearRateLimit
+  clearRateLimit,
+  otpRateLimiter
 };

@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const Otp = require('../models/Otp');
 
 // Generate default password for students (deprecated - use generateRandomPassword)
 const generateDefaultPassword = (rollNo) => {
@@ -97,6 +98,27 @@ const cleanUrl = (url) => {
   return url;
 };
 
+/**
+ * Generate a cryptographically secure 6-digit OTP
+ * @returns {string} Zero-padded 6-digit OTP string
+ */
+const generateOtp = () => {
+  const otp = crypto.randomInt(100000, 1000000);
+  return String(otp).padStart(6, '0');
+};
+
+/**
+ * Hash and store an OTP for a given email and purpose, replacing any existing one
+ * @param {string} email - Institute email address
+ * @param {string} otp - Plaintext OTP to hash and store
+ * @param {string} purpose - 'activation' or 'password_reset'
+ */
+const storeOtp = async (email, otp, purpose) => {
+  const otpHash = await bcrypt.hash(otp, 10);
+  await Otp.deleteOne({ email, purpose });
+  await Otp.create({ email, otpHash, purpose });
+};
+
 module.exports = {
   generateDefaultPassword,
   generateRandomPassword,
@@ -106,5 +128,7 @@ module.exports = {
   formatDateRange,
   isValidEmail,
   isValidPhone,
-  cleanUrl
+  cleanUrl,
+  generateOtp,
+  storeOtp
 };

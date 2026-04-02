@@ -1,6 +1,4 @@
 const excelService = require('../services/excelService');
-const { generateRandomPassword, hashPassword } = require('../utils/helpers');
-const emailService = require('../services/emailService');
 const auditLogger = require('../utils/auditLogger');
 
 // @desc    Upload Excel file and create students
@@ -50,15 +48,20 @@ const uploadStudents = async (req, res) => {
     const results = await excelService.createStudentsFromExcel(excelData, req.user.id);
 
     // Prepare response
+    const created = results.success.filter(s => s.action === 'created');
+    const updated = results.success.filter(s => s.action === 'updated');
+
     const response = {
       success: true,
       message: `Processed ${excelData.length} rows`,
       summary: {
         total: excelData.length,
-        successful: results.success.length,
+        created: created.length,
+        updated: updated.length,
         failed: results.failed.length
       },
-      successfulStudents: results.success,
+      createdStudents: created,
+      updatedStudents: updated,
       failedRows: results.failed
     };
 
@@ -111,6 +114,14 @@ const getAllStudents = async (req, res) => {
     const studentsWithCounts = students.map(student => {
       const studentObj = student.toObject();
       studentObj.resumeCount = resumeCountMap[student._id.toString()] || 0;
+      // Format dob as dd/mm/yyyy for display
+      if (studentObj.dob) {
+        const d = new Date(studentObj.dob);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        studentObj.dob = `${dd}/${mm}/${yyyy}`;
+      }
       return studentObj;
     });
 
@@ -436,76 +447,6 @@ const getStudentProfile = async (req, res) => {
   }
 };
 
-// @desc    Reset student password (admin action)
-// @route   POST /api/admin/reset-student-password/:studentId
-// @access  Private/Admin
-const resetStudentPassword = async (req, res) => {
-  try {
-    const Student = require('../models/Student');
-    const { studentId } = req.params;
-
-    // Find student
-    const student = await Student.findById(studentId);
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Student not found',
-          code: 'STUDENT_NOT_FOUND'
-        }
-      });
-    }
-
-    // Generate new password
-    const newPassword = generateRandomPassword();
-    const hashedPassword = await hashPassword(newPassword);
-
-    // Update password in database
-    await Student.findByIdAndUpdate(studentId, {
-      password: hashedPassword,
-      passwordSet: true,
-      isFirstLogin: true // Reset first login flag
-    });
-
-    // Send email with new password
-    const emailResult = await emailService.sendAdminResetEmail({
-      studentName: student.name,
-      email: student.instituteEmail,
-      password: newPassword,
-      loginUrl: process.env.PORTAL_URL
-    });
-
-    // Log the admin reset
-    await auditLogger.logAdminPasswordReset(req.user.id, studentId);
-
-    if (!emailResult.success) {
-      return res.status(500).json({
-        success: false,
-        error: {
-          message: 'Password was reset but email delivery failed',
-          code: 'EMAIL_DELIVERY_FAILED'
-        }
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Password reset email sent to ${student.instituteEmail}`
-      // Note: Password is NOT included in response
-    });
-  } catch (error) {
-    console.error('Admin password reset error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: 'Server error',
-        code: 'SERVER_ERROR'
-      }
-    });
-  }
-};
-
 const deleteStudent = async (req, res) => {
   try {
     const Student = require('../models/Student');
@@ -548,6 +489,5 @@ module.exports = {
   getResumePreview,
   downloadResumePDF,
   getStudentProfile,
-  resetStudentPassword,
   deleteStudent
 };

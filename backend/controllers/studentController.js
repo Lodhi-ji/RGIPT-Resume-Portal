@@ -37,6 +37,8 @@ const getMe = async (req, res) => {
         class10: student.class10,
         class12: student.class12,
         isFirstLogin: student.isFirstLogin,
+        dob: student.dob,
+        gender: student.gender,
         createdAt: student.createdAt
       },
       profile: profile || null
@@ -102,7 +104,8 @@ const updateProfile = async (req, res) => {
       positionsOfResponsibility,
       courses,
       socialLinks,
-      extracurricular
+      extracurricular,
+      objective
     } = req.body;
 
     // Find profile
@@ -122,7 +125,8 @@ const updateProfile = async (req, res) => {
         positionsOfResponsibility: positionsOfResponsibility || [],
         courses: courses || [],
         socialLinks: socialLinks || {},
-        extracurricular: extracurricular || []
+        extracurricular: extracurricular || [],
+        objective: objective || ''
       });
     } else {
       // Update existing profile
@@ -137,6 +141,7 @@ const updateProfile = async (req, res) => {
       profile.courses = courses !== undefined ? courses : profile.courses;
       profile.socialLinks = socialLinks !== undefined ? socialLinks : profile.socialLinks;
       profile.extracurricular = extracurricular !== undefined ? extracurricular : profile.extracurricular;
+      profile.objective = objective !== undefined ? objective : profile.objective;
 
       await profile.save();
     }

@@ -9,16 +9,14 @@ const AdminDashboard = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('students');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [batchFilter, setBatchFilter] = useState('all');
   const [deleteModal, setDeleteModal] = useState({ open: false, student: null, loading: false });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
@@ -26,7 +24,6 @@ const AdminDashboard = () => {
         api.get('/admin/stats'),
         api.get('/admin/students')
       ]);
-      
       setStats(statsRes.data.stats);
       setStudents(studentsRes.data.students);
     } catch (error) {
@@ -36,14 +33,9 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleUploadComplete = () => {
-    setShowUpload(false);
-    fetchData();
-  };
+  const handleUploadComplete = () => { setShowUpload(false); fetchData(); };
 
-  const handleDeleteStudent = async (student) => {
-    setDeleteModal({ open: true, student, loading: false });
-  };
+  const handleDeleteStudent = (student) => setDeleteModal({ open: true, student, loading: false });
 
   const confirmDelete = async () => {
     const student = deleteModal.student;
@@ -58,297 +50,205 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleStudentClick = (student) => {
-    setSelectedStudent(student);
-  };
-
-  const handleCloseStudentModal = () => {
-    setSelectedStudent(null);
-  };
-
-  // Filter students based on search, department and batch
   const filteredStudents = students.filter(student => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.instituteEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.rollNo?.toLowerCase().includes(searchQuery.toLowerCase());
-    
     const matchesDepartment = departmentFilter === 'all' || student.branch === departmentFilter;
     const matchesBatch = batchFilter === 'all' || student.graduationYear === batchFilter;
-    
     return matchesSearch && matchesDepartment && matchesBatch;
   });
 
-  // Get unique departments for filter
-  const departments = ['all', ...new Set(students.map(s => s.branch).filter(Boolean))];
+  const departments = [...new Set(students.map(s => s.branch).filter(Boolean))].sort();
+  const batches = [...new Set(students.map(s => s.graduationYear).filter(Boolean))].sort();
 
-  // Get unique batches (graduation years) sorted
-  const batches = ['all', ...new Set(students.map(s => s.graduationYear).filter(Boolean)).values()].sort();
+  const activatedCount = students.filter(s => s.passwordSet).length;
+  const notActivatedCount = students.filter(s => !s.passwordSet).length;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-2">Manage students and resumes</p>
-          </div>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md transition-colors duration-200"
-          >
-            Upload Students
-          </button>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Top bar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Manage students and resumes</p>
         </div>
+        <button
+          onClick={() => setShowUpload(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Upload Students
+        </button>
+      </div>
 
-        {/* Tabs */}
-        <div className="mb-8 border-b border-gray-200">
-          <div className="flex gap-6">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              📊 Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('students')}
-              className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors ${
-                activeTab === 'students'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              👥 Students
-            </button>
-            <button
-              onClick={() => setActiveTab('resumes')}
-              className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors ${
-                activeTab === 'resumes'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              📄 Resumes
-            </button>
-          </div>
+      {/* Stats strip */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <StatCard label="Total Students" value={stats?.totalStudents ?? 0} color="blue" icon="👥" />
+          <StatCard label="Total Resumes" value={stats?.totalResumes ?? 0} color="green" icon="📄" />
+          <StatCard label="Activated" value={activatedCount} color="emerald" icon="✅" />
+          <StatCard label="Not Activated" value={notActivatedCount} color="amber" icon="⏳" />
         </div>
+      </div>
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <>
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Students</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats?.totalStudents || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">👥</span>
-                  </div>
-                </div>
-              </div>
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200 px-6">
+        <div className="flex gap-1">
+          {[
+            { id: 'students', label: 'Students', icon: '👥' },
+            { id: 'overview', label: 'Branch Overview', icon: '📊' },
+            { id: 'resumes', label: 'Resumes', icon: '📄' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Resumes</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats?.totalResumes || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">📄</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Active Today</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats?.activeToday || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">⚡</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">New This Week</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats?.newThisWeek || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">✨</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Students by Branch */}
-            {stats?.studentsByBranch && stats.studentsByBranch.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Students by Branch</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {stats.studentsByBranch.map((branch) => (
-                    <div key={branch._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900">{branch._id}</h4>
-                      <p className="text-gray-600 text-sm">{branch.count} students</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+      {/* Main content — full width */}
+      <div className="flex-1 p-6">
 
         {/* Students Tab */}
         {activeTab === 'students' && (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            {/* Table Header with Search and Filters */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <h2 className="text-xl font-semibold text-gray-900">All Students</h2>
-                
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {/* Search */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search students..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-4 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <svg 
-                      className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
+            {/* Toolbar */}
+            <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-3">
+              {/* Search */}
+              <div className="relative flex-1 min-w-0">
+                <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search by name, email or roll no..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
 
-                  {/* Filter Dropdown */}
-                  <select 
-                    value={departmentFilter}
-                    onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="px-4 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All Departments</option>
-                    {departments.filter(d => d !== 'all').map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
+              <div className="flex gap-2 flex-wrap">
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Departments</option>
+                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
 
-                  {/* Batch Filter */}
-                  <select
-                    value={batchFilter}
-                    onChange={(e) => setBatchFilter(e.target.value)}
-                    className="px-4 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All Batches</option>
-                    {batches.filter(b => b !== 'all').map(year => (
-                      <option key={year} value={year}>Batch {year}</option>
-                    ))}
-                  </select>
+                <select
+                  value={batchFilter}
+                  onChange={(e) => setBatchFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Batches</option>
+                  {batches.map(y => <option key={y} value={y}>Batch {y}</option>)}
+                </select>
 
-                  {/* Add Student Button */}
-                  <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md whitespace-nowrap transition-colors duration-200">
-                    + Add Student
-                  </button>
-                </div>
+                <span className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                  {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}
+                </span>
               </div>
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Department
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Resumes
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </th>
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Batch</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Resumes</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredStudents.map((student, index) => (
-                    <tr 
+                <tbody className="divide-y divide-gray-100">
+                  {filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-16 text-center text-gray-400">
+                        <div className="text-4xl mb-3">🔍</div>
+                        <p className="font-medium">No students found</p>
+                        <p className="text-sm mt-1">Try adjusting your search or filters</p>
+                      </td>
+                    </tr>
+                  ) : filteredStudents.map((student) => (
+                    <tr
                       key={student._id}
-                      className={`hover:bg-gray-100 transition-colors cursor-pointer ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
-                      onClick={() => handleStudentClick(student)}
-                      title="Click to view student details and resumes"
+                      className="hover:bg-blue-50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedStudent(student)}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold text-sm">
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-blue-700 font-bold text-sm">
                               {student.name?.charAt(0).toUpperCase() || '?'}
                             </span>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-semibold text-gray-900">
-                              {student.name}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {student.rollNo}
-                            </div>
+                          <div>
+                            <div className="font-semibold text-gray-900">{student.name}</div>
+                            <div className="text-xs text-gray-400">{student.rollNo}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {student.instituteEmail}
+                      <td className="px-6 py-3 text-gray-600">{student.instituteEmail}</td>
+                      <td className="px-6 py-3 text-gray-600 max-w-xs truncate">{student.branch}</td>
+                      <td className="px-6 py-3 text-gray-600">{student.graduationYear || '—'}</td>
+                      <td className="px-6 py-3 text-center">
+                        {student.passwordSet ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending
+                          </span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {student.branch}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      <td className="px-6 py-3 text-center">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
                           {student.resumeCount || 0}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button 
-                            onClick={() => handleStudentClick(student)}
-                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-md transition-colors duration-200"
+                      <td className="px-6 py-3 text-right" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setSelectedStudent(student)}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md transition-colors"
                           >
                             View
                           </button>
-                          <button className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors duration-200" onClick={() => handleDeleteStudent(student)}>
+                          <button
+                            onClick={() => handleDeleteStudent(student)}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md transition-colors"
+                          >
                             Delete
                           </button>
                         </div>
@@ -358,28 +258,61 @@ const AdminDashboard = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
 
-            {/* Pagination */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="text-sm text-gray-600">
-                  Showing <span className="font-semibold">{filteredStudents.length > 0 ? 1 : 0}</span> to{' '}
-                  <span className="font-semibold">{Math.min(10, filteredStudents.length)}</span> of{' '}
-                  <span className="font-semibold">{filteredStudents.length}</span> results
-                </p>
-                <div className="flex gap-2">
-                  <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200">
-                    Previous
-                  </button>
-                  <button className="px-3 py-1.5 bg-blue-500 text-white rounded-md font-semibold">
-                    1
-                  </button>
-                  <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200">
-                    2
-                  </button>
-                  <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200">
-                    Next
-                  </button>
+        {/* Branch Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Students by Branch</h2>
+              {stats?.studentsByBranch?.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.studentsByBranch.map((branch) => {
+                    const pct = Math.round((branch.count / (stats.totalStudents || 1)) * 100);
+                    return (
+                      <div key={branch._id}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="font-medium text-gray-700 truncate max-w-xs">{branch._id}</span>
+                          <span className="text-gray-500 ml-2 flex-shrink-0">{branch.count} ({pct}%)</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No branch data available.</p>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Account Status</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="font-semibold text-green-800">Activated Accounts</p>
+                      <p className="text-xs text-green-600">Students who have set their password</p>
+                    </div>
+                  </div>
+                  <span className="text-3xl font-bold text-green-700">{activatedCount}</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">⏳</span>
+                    <div>
+                      <p className="font-semibold text-amber-800">Pending Activation</p>
+                      <p className="text-xs text-amber-600">Students yet to activate their account</p>
+                    </div>
+                  </div>
+                  <span className="text-3xl font-bold text-amber-700">{notActivatedCount}</span>
                 </div>
               </div>
             </div>
@@ -387,81 +320,79 @@ const AdminDashboard = () => {
         )}
 
         {/* Resumes Tab */}
-        {activeTab === 'resumes' && <ResumeViewer />}
-
-        {/* Excel Upload Modal */}
-        {showUpload && (
-          <ExcelUpload
-            onClose={() => setShowUpload(false)}
-            onUploadComplete={handleUploadComplete}
-          />
-        )}
-
-        {/* Student Detail Modal */}
-        {selectedStudent && (
-          <StudentDetailModal
-            student={selectedStudent}
-            onClose={handleCloseStudentModal}
-          />
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {deleteModal.open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => !deleteModal.loading && setDeleteModal({ open: false, student: null, loading: false })}
-            />
-            {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
-              {/* Icon */}
-              <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mx-auto mb-4">
-                <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 text-center mb-1">Delete Student</h3>
-              <p className="text-sm text-gray-500 text-center mb-1">
-                You are about to permanently delete
-              </p>
-              <p className="text-base font-semibold text-gray-800 text-center mb-2">
-                {deleteModal.student?.name}
-              </p>
-              <p className="text-xs text-gray-400 text-center mb-6">
-                This will remove all their data including profile and resumes. This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteModal({ open: false, student: null, loading: false })}
-                  disabled={deleteModal.loading}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  disabled={deleteModal.loading}
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {deleteModal.loading ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      Deleting...
-                    </>
-                  ) : 'Delete'}
-                </button>
-              </div>
-            </div>
+        {activeTab === 'resumes' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <ResumeViewer />
           </div>
         )}
-
       </div>
+
+      {/* Modals */}
+      {showUpload && (
+        <ExcelUpload onClose={() => setShowUpload(false)} onUploadComplete={handleUploadComplete} />
+      )}
+
+      {selectedStudent && (
+        <StudentDetailModal student={selectedStudent} onClose={() => setSelectedStudent(null)} />
+      )}
+
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => !deleteModal.loading && setDeleteModal({ open: false, student: null, loading: false })}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mx-auto mb-4">
+              <svg className="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">Delete Student</h3>
+            <p className="text-sm text-gray-500 text-center mb-1">You are about to permanently delete</p>
+            <p className="text-base font-semibold text-gray-800 text-center mb-2">{deleteModal.student?.name}</p>
+            <p className="text-xs text-gray-400 text-center mb-6">
+              This will remove all their data including profile and resumes. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteModal({ open: false, student: null, loading: false })}
+                disabled={deleteModal.loading}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteModal.loading}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleteModal.loading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Deleting...
+                  </>
+                ) : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+const StatCard = ({ label, value, icon }) => (
+  <div className="flex items-center gap-3 py-2">
+    <span className="text-xl">{icon}</span>
+    <div>
+      <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
+      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+    </div>
+  </div>
+);
 
 export default AdminDashboard;
