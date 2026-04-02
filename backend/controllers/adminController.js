@@ -22,7 +22,7 @@ const uploadStudents = async (req, res) => {
     // Parse Excel file
     let excelData;
     try {
-      excelData = excelService.parseExcelFile(req.file.buffer);
+      excelData = await excelService.parseExcelFile(req.file.buffer);
     } catch (error) {
       return res.status(400).json({
         success: false,

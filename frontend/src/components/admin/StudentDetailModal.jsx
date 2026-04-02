@@ -61,7 +61,7 @@ const StudentDetailModal = ({ student, onClose }) => {
 
   if (!student) return null;
 
-  const initials = student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (student.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
 
   return (
     <>

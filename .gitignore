@@ -3,6 +3,10 @@ node_modules/
 frontend/node_modules/
 backend/node_modules/
 
+# Puppeteer cache
+backend/.cache/
+.cache/
+
 # Environment variables
 .env
 backend/.env

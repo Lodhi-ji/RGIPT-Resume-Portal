@@ -1,20 +1,41 @@
-const xlsx = require('xlsx');
+const ExcelJS = require('exceljs');
 const Student = require('../models/Student');
 const Profile = require('../models/Profile');
 const { isValidEmail } = require('../utils/helpers');
 const auditLogger = require('../utils/auditLogger');
 
 class ExcelService {
-  // Parse Excel file buffer
-  parseExcelFile(buffer) {
+  // Parse Excel file buffer (async, using exceljs)
+  async parseExcelFile(buffer) {
     try {
-      const workbook = xlsx.read(buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      
-      // Convert to JSON
-      const data = xlsx.utils.sheet_to_json(worksheet);
-      
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) throw new Error('No worksheet found in Excel file');
+
+      const data = [];
+      let headers = [];
+
+      worksheet.eachRow((row, rowNumber) => {
+        const values = row.values.slice(1); // row.values[0] is always undefined
+        if (rowNumber === 1) {
+          // First row = headers
+          headers = values.map(v => (v !== null && v !== undefined ? String(v).trim() : ''));
+        } else {
+          // Subsequent rows = data
+          const obj = {};
+          headers.forEach((header, i) => {
+            const cell = values[i];
+            obj[header] = cell !== undefined && cell !== null ? cell : '';
+          });
+          // Skip entirely empty rows
+          if (Object.values(obj).some(v => v !== '')) {
+            data.push(obj);
+          }
+        }
+      });
+
       return data;
     } catch (error) {
       throw new Error('Failed to parse Excel file: ' + error.message);

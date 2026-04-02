@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 const StudentDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
   const { isFirstLogin, updateIsFirstLogin } = useAuth();
@@ -37,6 +38,7 @@ const StudentDashboard = () => {
       });
     } catch (error) {
       console.error('Error fetching data:', error);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -78,6 +80,23 @@ const StudentDashboard = () => {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-lg text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-xl font-semibold text-gray-700 mb-2">Failed to load dashboard</p>
+          <p className="text-gray-500 mb-4">Could not connect to the server. Please check your connection and try again.</p>
+          <button
+            onClick={() => { setError(false); setLoading(true); fetchData(); }}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

@@ -201,8 +201,8 @@ class PDFService {
         const possiblePaths = [
           'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
           'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-          process.env.LOCALAPPDATA + '\\Google\\Chrome\\Application\\chrome.exe'
-        ];
+          process.env.LOCALAPPDATA ? `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe` : ''
+        ].filter(Boolean);
         
         for (const path of possiblePaths) {
           if (fs.existsSync(path)) {
@@ -211,9 +211,23 @@ class PDFService {
             break;
           }
         }
-        
+
         if (!launchOptions.executablePath) {
-          console.log('Chrome not found in common paths, using Puppeteer bundled Chromium');
+          try {
+            const puppeteerPath = puppeteer.executablePath();
+            if (puppeteerPath) {
+              launchOptions.executablePath = puppeteerPath;
+              console.log(`Using Puppeteer executable path: ${puppeteerPath}`);
+            } else {
+              console.log('Chrome not found in common paths and Puppeteer executable path is unavailable.');
+            }
+          } catch (pathError) {
+            console.log('Chrome not found in common paths, and Puppeteer executable path could not be resolved:', pathError.message);
+          }
+        }
+
+        if (!launchOptions.executablePath) {
+          console.log('No browser executable found on Windows. Set PUPPETEER_EXECUTABLE_PATH or install Chrome/Chromium.');
         }
       } else {
         // Linux/Mac development - let Puppeteer use bundled Chromium
