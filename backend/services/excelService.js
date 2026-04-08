@@ -82,10 +82,6 @@ class ExcelService {
       'branch',
       'degree',
       'cpi',
-      '10th percentage',
-      '12th percentage',
-      '10th school',
-      '12th school',
       'graduationYear',
       'semester'
     ];
@@ -142,28 +138,6 @@ class ExcelService {
       errors.push('CPI must be a number between 0 and 10');
     }
 
-    // 10th percentage validation
-    const class10Percentage = parseFloat(student['10th percentage']);
-    if (isNaN(class10Percentage) || class10Percentage < 0 || class10Percentage > 100) {
-      errors.push('10th percentage must be a number between 0 and 100');
-    }
-
-    // 12th percentage validation
-    const class12Percentage = parseFloat(student['12th percentage']);
-    if (isNaN(class12Percentage) || class12Percentage < 0 || class12Percentage > 100) {
-      errors.push('12th percentage must be a number between 0 and 100');
-    }
-
-    // 10th school validation
-    if (!student['10th school'] || student['10th school'].trim() === '') {
-      errors.push('10th school is required');
-    }
-
-    // 12th school validation
-    if (!student['12th school'] || student['12th school'].trim() === '') {
-      errors.push('12th school is required');
-    }
-
     // Graduation year validation
     if (!student.graduationYear || student.graduationYear.toString().trim() === '') {
       errors.push('Graduation year is required');
@@ -198,18 +172,8 @@ class ExcelService {
       graduationYear: excelRow.graduationYear.toString().trim(),
       cpi: parseFloat(excelRow.cpi),
       cgpaRemark: `till Semester ${parseInt(excelRow.semester.toString().trim()) - 1}`,
-      class10: {
-        percentage: parseFloat(excelRow['10th percentage']),
-        school: excelRow['10th school'].trim(),
-        year: excelRow['10th year'] ? excelRow['10th year'].toString().trim() : '',
-        board: excelRow['10th board'] ? excelRow['10th board'].toString().trim() : ''
-      },
-      class12: {
-        percentage: parseFloat(excelRow['12th percentage']),
-        school: excelRow['12th school'].trim(),
-        year: excelRow['12th year'] ? excelRow['12th year'].toString().trim() : '',
-        board: excelRow['12th board'] ? excelRow['12th board'].toString().trim() : ''
-      },
+      class10: { percentage: 0, school: '', year: '', board: '' },
+      class12: { percentage: 0, school: '', year: '', board: '' },
       password: null,  // No password until student activates account
       passwordSet: false,  // Account not activated yet
       role: 'student',

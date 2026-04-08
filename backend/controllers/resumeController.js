@@ -89,7 +89,9 @@ const createResumeVersion = async (req, res) => {
       selectedSocialLinks,
       selectedAchievements,
       selectedCourses,
-      selectedPositionsOfResponsibility
+      selectedPositionsOfResponsibility,
+      selectedSkillCategories,
+      selectedExtracurricular
     } = req.body;
 
     // Validate required fields
@@ -115,6 +117,18 @@ const createResumeVersion = async (req, res) => {
       });
     }
 
+    // Enforce 3-resume limit
+    const resumeCount = await ResumeVersion.countDocuments({ studentId: req.user.id });
+    if (resumeCount >= 3) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Maximum 3 resumes allowed. Please delete an existing resume to create a new one.',
+          code: 'RESUME_LIMIT_REACHED'
+        }
+      });
+    }
+
     // Check for duplicate name
     const existingResume = await ResumeVersion.findOne({
       studentId: req.user.id,
@@ -122,12 +136,6 @@ const createResumeVersion = async (req, res) => {
     });
 
     if (existingResume) {
-      console.log('Duplicate resume found:', { 
-        existingId: existingResume._id, 
-        existingName: existingResume.name, 
-        newName: name,
-        studentId: req.user.id 
-      });
       return res.status(400).json({
         success: false,
         error: {
@@ -189,7 +197,9 @@ const createResumeVersion = async (req, res) => {
       selectedSocialLinks: selectedSocialLinks || [],
       selectedAchievements: selectedAchievements || [],
       selectedCourses: selectedCourses || [],
-      selectedPositionsOfResponsibility: selectedPositionsOfResponsibility || []
+      selectedPositionsOfResponsibility: selectedPositionsOfResponsibility || [],
+      selectedSkillCategories: selectedSkillCategories || [],
+      selectedExtracurricular: selectedExtracurricular || []
     });
 
     res.status(201).json({
@@ -260,7 +270,9 @@ const updateResumeVersion = async (req, res) => {
       selectedSocialLinks,
       selectedAchievements,
       selectedCourses,
-      selectedPositionsOfResponsibility
+      selectedPositionsOfResponsibility,
+      selectedSkillCategories,
+      selectedExtracurricular
     } = req.body;
 
     // Validate template if provided
@@ -308,6 +320,8 @@ const updateResumeVersion = async (req, res) => {
     resumeVersion.selectedAchievements = selectedAchievements !== undefined ? selectedAchievements : resumeVersion.selectedAchievements;
     resumeVersion.selectedCourses = selectedCourses !== undefined ? selectedCourses : resumeVersion.selectedCourses;
     resumeVersion.selectedPositionsOfResponsibility = selectedPositionsOfResponsibility !== undefined ? selectedPositionsOfResponsibility : resumeVersion.selectedPositionsOfResponsibility;
+    resumeVersion.selectedSkillCategories = selectedSkillCategories !== undefined ? selectedSkillCategories : resumeVersion.selectedSkillCategories;
+    resumeVersion.selectedExtracurricular = selectedExtracurricular !== undefined ? selectedExtracurricular : resumeVersion.selectedExtracurricular;
 
     await resumeVersion.save();
 
@@ -454,6 +468,10 @@ const generateResumePreview = async (req, res) => {
       ? profile.positionsOfResponsibility?.filter(p => resumeVersion.selectedPositionsOfResponsibility.includes(p._id.toString())) || []
       : [];
 
+    const selectedExtracurricular = profile.extracurricular?.filter(a => resumeVersion.selectedExtracurricular?.includes(String(a))) || [];
+
+    const selectedSkills = (profile.skills || []).filter(s => s && typeof s === 'object' && resumeVersion.selectedSkillCategories?.includes(s.category));
+
     // Prepare data for template
     const data = {
       name: student.name,
@@ -474,14 +492,14 @@ const generateResumePreview = async (req, res) => {
       class12School: student.class12.school,
       class12Year: student.class12.year,
       class12Board: student.class12.board,
-      skills: profile.skills,
+      skills: selectedSkills,
       projects: selectedProjects,
       internships: selectedInternships,
       publications: selectedPublications,
       certifications: selectedCertifications,
       achievements: selectedAchievements,
       positionsOfResponsibility: selectedPositionsOfResponsibility,
-      extracurricular: profile.extracurricular,
+      extracurricular: selectedExtracurricular,
       courses: selectedCourses,
       socialLinks: selectedSocialLinks,
       dob: student.dob,

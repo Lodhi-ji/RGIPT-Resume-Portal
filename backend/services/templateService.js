@@ -104,14 +104,18 @@ class TemplateService {
   renderCertifications(certifications, template) {
     if (template === 'template1') {
       return certifications.map(cert => {
-        let text = cert.name;
-        if (cert.issuer) text += ` - ${cert.issuer}`;
-        if (cert.issueDate) text += ` (${formatDate(cert.issueDate)})`;
-        if (cert.certLink) text += ` <a href="${cert.certLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>`;
-        return `<li>${text}</li>`;
+        const certIcon = cert.certLink ? ` <a href="${cert.certLink}" target="_blank"><i class="fas fa-link" style="font-size:11px;"></i></a>` : '';
+        const dateStr = cert.issueDate ? formatDate(cert.issueDate) : '';
+        const description = cert.description ? `<div style="font-size:12px; margin-top:2px;">${cert.description}</div>` : '';
+        return `<li>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span><strong>${cert.name}</strong>${certIcon}</span>
+              ${dateStr ? `<span style="font-size:12px; white-space:nowrap; margin-left:8px;">${dateStr}</span>` : ''}
+            </div>
+            ${description}
+          </li>`;
       }).join('\n          ');
     }
-    // template2 uses different rendering (handled in replacePlaceholders)
     return '';
   }
 
@@ -137,14 +141,10 @@ class TemplateService {
   // Render courses
   renderCourses(courses, template) {
     if (template === 'template1') {
-      return courses.map(course => {
-        const parts = [course.name];
-        if (course.platform) parts.push(course.platform);
-        if (course.completionDate) parts.push(formatDate(course.completionDate));
-        return `<div class="experience-item"><div class="item-title">${parts.join(' • ')}</div></div>`;
-      }).join('\n      ');
+      const names = courses.map(c => typeof c === 'string' ? c : c.name).filter(Boolean);
+      if (names.length === 0) return '';
+      return `<li>${names.join(', ')}</li>`;
     }
-    // template2 uses different rendering (handled in replacePlaceholders)
     return '';
   }
 
@@ -179,15 +179,21 @@ class TemplateService {
   renderPublications(publications, template) {
     if (template === 'template1') {
       return publications.map(pub => {
-        let html = `<li><strong>${pub.title}</strong>`;
-        if (pub.journal) html += ` - <em>${pub.journal}</em>`;
-        if (pub.year) html += ` (${pub.year})`;
-        if (pub.paperLink) html += ` <a href="${pub.paperLink}" target="_blank"><i class="fas fa-external-link-alt"></i></a>`;
-        html += '</li>';
-        return html;
+        const paperIcon = pub.paperLink ? ` <a href="${pub.paperLink}" target="_blank"><i class="fas fa-file-alt" style="font-size:11px;"></i></a>` : '';
+        const journalLine = pub.journal ? `<div style="font-style:italic; font-size:12px;">${pub.journal}</div>` : '';
+        const descLine = pub.description ? `<div style="font-size:12px; margin-top:2px;">${pub.description}</div>` : '';
+        const bulletLines = pub.bullets && pub.bullets.length > 0
+          ? `<ul>${pub.bullets.map(b => `<li>${b}</li>`).join('')}</ul>`
+          : '';
+        return `<li>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span><strong>${pub.title}</strong>${paperIcon}</span>
+              ${pub.year ? `<span style="font-size:12px; white-space:nowrap; margin-left:8px;">${pub.year}</span>` : ''}
+            </div>
+            ${journalLine}${descLine}${bulletLines}
+          </li>`;
       }).join('\n          ');
     }
-    // template2 uses different rendering (handled in replacePlaceholders)
     return '';
   }
 
@@ -368,9 +374,10 @@ class TemplateService {
     }
 
     if (data.class12Percentage && data.class12School) {
+      const boardSuffix = data.class12Board ? ` (${data.class12Board})` : '';
       rows.push(`
             <tr>
-                <td>XII</td>
+                <td>Senior Secondary${boardSuffix}</td>
                 <td>${data.class12School}</td>
                 <td>${data.class12Year || ''}</td>
                 <td>${data.class12Percentage}</td>
@@ -378,9 +385,10 @@ class TemplateService {
     }
 
     if (data.class10Percentage && data.class10School) {
+      const boardSuffix = data.class10Board ? ` (${data.class10Board})` : '';
       rows.push(`
             <tr>
-                <td>X</td>
+                <td>Secondary${boardSuffix}</td>
                 <td>${data.class10School}</td>
                 <td>${data.class10Year || ''}</td>
                 <td>${data.class10Percentage}</td>
@@ -567,19 +575,30 @@ class TemplateService {
     
     const items = publications.map(pub => {
       const paperIcon = pub.paperLink ? `<a href="${pub.paperLink}" target="_blank" class="title-icon"><i class="fas fa-file-alt"></i></a>` : '';
-      
+      const journalLine = pub.journal ? `
+        <div class="item-subtitle" style="font-style:italic;">${pub.journal}</div>` : '';
+      const descLine = pub.description ? `
+        <div style="font-size:12px; margin-top:2px;">${pub.description}</div>` : '';
+      const bulletLines = pub.bullets && pub.bullets.length > 0 ? `
+        <ul>
+            ${pub.bullets.map(b => `<li>${b}</li>`).join('\n            ')}
+        </ul>` : '';
+
       return `
-        <li>
-            ${paperIcon}
-            <span><strong>${pub.title || ''}</strong> — <em>${pub.journal || ''}</em> (${pub.year || ''})</span>
-        </li>`;
+    <div class="item" style="margin-bottom: 6px;">
+        <div class="flex-between">
+            <div class="title-group">
+                <span class="item-title">${pub.title || ''}</span>
+                ${paperIcon}
+            </div>
+            ${pub.year ? `<span class="item-subtitle" style="font-style:normal; white-space:nowrap;">${pub.year}</span>` : ''}
+        </div>${journalLine}${descLine}${bulletLines}
+    </div>`;
     }).join('');
     
     return `
     <div class="section-wrapper">
-        <div class="section-heading">Publications</div>
-        <ul class="pub-cert-list">${items}
-        </ul>
+        <div class="section-heading">Publications</div>${items}
     </div>`;
   }
 
@@ -588,44 +607,45 @@ class TemplateService {
     
     const items = certifications.map(cert => {
       const certIcon = cert.certLink ? `<a href="${cert.certLink}" target="_blank" class="title-icon"><i class="fas fa-link"></i></a>` : '';
-      
+      const dateStr = cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+      const description = cert.description ? `
+        <div style="font-size:12px; margin-top:2px;">${cert.description}</div>` : '';
+
       return `
-        <li>
-            ${certIcon}
-            <span>${cert.name || ''}</span>
-        </li>`;
+    <div class="item" style="margin-bottom: 4px;">
+        <div class="flex-between">
+            <div class="title-group">
+                <span class="item-title">${cert.name || ''}</span>
+                ${certIcon}
+            </div>
+            ${dateStr ? `<span class="item-subtitle" style="font-style:normal; white-space:nowrap;">${dateStr}</span>` : ''}
+        </div>${description}
+    </div>`;
     }).join('');
     
     return `
     <div class="section-wrapper">
-        <div class="section-heading">Certifications</div>
-        <ul class="pub-cert-list">${items}
-        </ul>
+        <div class="section-heading">Certifications</div>${items}
     </div>`;
   }
 
   renderTemplate2Skills(skills) {
     if (!skills || skills.length === 0) return '';
-    
-    // Group skills by category if they're strings, or use as-is if objects
+
     let skillRows = '';
-    
     if (typeof skills[0] === 'string') {
-      // Simple string array - display as single row
-      skillRows = `
-        <div class="skill-row">
-            <span class="skill-category">Skills:</span>
-            <span>${skills.join(', ')}</span>
-        </div>`;
+      // Legacy flat array
+      skillRows = `<div class="skill-row"><span class="skill-category">Skills:</span><span>${skills.join(', ')}</span></div>`;
     } else {
-      // Assume categorized skills (future enhancement)
-      skillRows = skills.map(skill => `
+      // Categorized format: [{category, items:[]}]
+      skillRows = skills.filter(s => s.category && s.items?.length > 0).map(s => `
         <div class="skill-row">
-            <span class="skill-category">${skill.category || 'Skills'}:</span>
-            <span>${skill.items || skill}</span>
+            <span class="skill-category">${s.category} :</span>
+            <span>${s.items.join(', ')}</span>
         </div>`).join('');
     }
-    
+
+    if (!skillRows) return '';
     return `
     <div class="section-wrapper">
         <div class="section-heading">Technical Skills</div>
@@ -678,18 +698,14 @@ class TemplateService {
 
   renderTemplate2Courses(courses) {
     if (!courses || courses.length === 0) return '';
-    
-    const items = courses.map(course => {
-      const courseName = typeof course === 'string' ? course : course.name;
-      return `
-        <li>${courseName}</li>`;
-    }).join('');
-    
+    const names = courses.map(c => typeof c === 'string' ? c : c.name).filter(Boolean);
+    if (names.length === 0) return '';
     return `
     <div class="section-wrapper">
-        <div class="section-heading">Courses</div>
-        <ul>${items}
-        </ul>
+        <div class="section-heading">Key Courses Taken</div>
+        <div class="item">
+            <p>${names.join(', ')}</p>
+        </div>
     </div>`;
   }
 

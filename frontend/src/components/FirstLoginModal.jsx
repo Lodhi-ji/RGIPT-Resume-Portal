@@ -231,8 +231,8 @@ const FirstLoginModal = ({ isOpen, onClose, onPasswordChanged }) => {
               ].map((rule, i) => {
                 const passed = rule.test(formData.newPassword);
                 return (
-                  <li key={i} style={{ color: passed ? '#16a34a' : '#6b7280', marginBottom: '2px' }}>
-                    {passed ? '✓' : '○'} {rule.label}
+                  <li key={i} style={{ color: passed ? '#16a34a' : '#dc2626', marginBottom: '2px' }}>
+                    {passed ? '✓' : '✗'} {rule.label}
                   </li>
                 );
               })}

@@ -99,10 +99,10 @@ const AdminDashboard = () => {
       {/* Stats strip */}
       <div className="bg-white border-b border-gray-200 px-6 py-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label="Total Students" value={stats?.totalStudents ?? 0} color="blue" icon="👥" />
-          <StatCard label="Total Resumes" value={stats?.totalResumes ?? 0} color="green" icon="📄" />
-          <StatCard label="Activated" value={activatedCount} color="emerald" icon="✅" />
-          <StatCard label="Not Activated" value={notActivatedCount} color="amber" icon="⏳" />
+          <StatCard label="Total Students" value={stats?.totalStudents ?? 0} color="blue" />
+          <StatCard label="Total Resumes" value={stats?.totalResumes ?? 0} color="green" />
+          <StatCard label="Activated" value={activatedCount} color="emerald" />
+          <StatCard label="Not Activated" value={notActivatedCount} color="amber" />
         </div>
       </div>
 
@@ -110,9 +110,9 @@ const AdminDashboard = () => {
       <div className="bg-white border-b border-gray-200 px-6">
         <div className="flex gap-1">
           {[
-            { id: 'students', label: 'Students', icon: '👥' },
-            { id: 'overview', label: 'Branch Overview', icon: '📊' },
-            { id: 'resumes', label: 'Resumes', icon: '📄' },
+            { id: 'students', label: 'Students' },
+            { id: 'overview', label: 'Branch Overview' },
+            { id: 'resumes', label: 'Resumes' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -123,7 +123,7 @@ const AdminDashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-800'
               }`}
             >
-              {tab.icon} {tab.label}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -194,7 +194,11 @@ const AdminDashboard = () => {
                   {filteredStudents.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-16 text-center text-gray-400">
-                        <div className="text-4xl mb-3">🔍</div>
+                        <div className="flex justify-center mb-3">
+                          <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
                         <p className="font-medium">No students found</p>
                         <p className="text-sm mt-1">Try adjusting your search or filters</p>
                       </td>
@@ -296,7 +300,9 @@ const AdminDashboard = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">✅</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>Active
+                    </span>
                     <div>
                       <p className="font-semibold text-green-800">Activated Accounts</p>
                       <p className="text-xs text-green-600">Students who have set their password</p>
@@ -306,7 +312,9 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">⏳</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending
+                    </span>
                     <div>
                       <p className="font-semibold text-amber-800">Pending Activation</p>
                       <p className="text-xs text-amber-600">Students yet to activate their account</p>
@@ -385,9 +393,8 @@ const AdminDashboard = () => {
   );
 };
 
-const StatCard = ({ label, value, icon }) => (
+const StatCard = ({ label, value }) => (
   <div className="flex items-center gap-3 py-2">
-    <span className="text-xl">{icon}</span>
     <div>
       <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
       <p className="text-xs text-gray-500 mt-0.5">{label}</p>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
+import PdfDownloadOverlay from '../common/PdfDownloadOverlay';
 
 // A4 at 96dpi = 794px wide × 1123px tall (one page height)
 // We render the iframe at true 794px width then scale it down to fit the container.
@@ -103,6 +104,13 @@ const formatSectionName = (key) => {
   return names[key] || key.charAt(0).toUpperCase() + key.slice(1);
 };
 
+const Toggle = ({ on }) => (
+  <div style={{ width: '36px', height: '20px', borderRadius: '10px', background: on ? '#3b82f6' : '#4b5563', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+    <div style={{ position: 'absolute', top: '3px', left: on ? '18px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+  </div>
+);
+const Empty = () => <p style={{ fontSize: '13px', color: '#6b7280', textAlign: 'center', padding: '32px 0' }}>No items available. Add them to your profile first.</p>;
+
 const ResumeBuilder = ({ resume, profile, onClose }) => {
   const [activeTab, setActiveTab] = useState('basic');
   const [formData, setFormData] = useState({
@@ -131,11 +139,14 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
     selectedAchievements: [],
     selectedCourses: [],
     selectedPositionsOfResponsibility: [],
+    selectedSkillCategories: [],
+    selectedExtracurricular: [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [previewHTML, setPreviewHTML] = useState('');
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const debounceTimerRef = useRef(null);
 
   useEffect(() => {
@@ -166,6 +177,8 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
         selectedAchievements: resume.selectedAchievements || [],
         selectedCourses: resume.selectedCourses?.map(id => id.toString()) || [],
         selectedPositionsOfResponsibility: resume.selectedPositionsOfResponsibility?.map(id => id.toString()) || [],
+        selectedSkillCategories: resume.selectedSkillCategories || [],
+        selectedExtracurricular: resume.selectedExtracurricular || [],
       });
     }
   }, [resume]);
@@ -330,20 +343,13 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       setError('No resume ID found. Please save the resume first.');
       return;
     }
-    
+    setDownloadingPdf(true);
     try {
       console.log('Downloading PDF for resume:', resume._id);
       const response = await api.get(`/resume-versions/${resume._id}/generate`, {
         responseType: 'blob',
       });
-      
-      console.log('PDF response received:', response);
-      
-      // Check if response is actually a blob
-      if (!(response.data instanceof Blob)) {
-        throw new Error('Invalid response format');
-      }
-      
+      if (!(response.data instanceof Blob)) throw new Error('Invalid response format');
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -352,12 +358,11 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
-      console.log('PDF download triggered successfully');
     } catch (err) {
       console.error('PDF download error:', err);
-      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to download PDF';
-      setError(errorMessage);
+      setError(err.response?.data?.error?.message || err.message || 'Failed to download PDF');
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -412,10 +417,11 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-hidden">
+      <PdfDownloadOverlay visible={downloadingPdf} />
       <div className="bg-gray-50 w-full h-full flex flex-col">
         {/* Fixed Toolbar */}
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="px-6 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button 
@@ -436,7 +442,7 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                   disabled={isLoadingPreview}
                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoadingPreview ? '⟳ Loading...' : '⟳ Preview'}
+                  {isLoadingPreview ? 'Loading...' : 'Preview'}
                 </button>
                 <button 
                   type="submit"
@@ -452,7 +458,7 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                     onClick={handleDownloadPDF}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md transition-colors duration-200"
                   >
-                    ⬇ Download PDF
+                    Download PDF
                   </button>
                 )}
               </div>
@@ -471,8 +477,8 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
 
         {/* Two-Panel Layout */}
         <div className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-8">
+          <div className="px-6 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6">
               
               {/* Left Panel: Editor */}
               <div className="space-y-6">
@@ -502,288 +508,277 @@ const ResumeBuilder = ({ resume, profile, onClose }) => {
                   </div>
 
                   {/* Template Selection Section */}
-                  <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                      Choose Template
-                    </h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { value: 'template1', name: 'Template 1' },
-                        { value: 'template2', name: 'Template 2' }
-                      ].map((template) => (
-                        <button
-                          key={template.value}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, template: template.value })}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            formData.template === template.value
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <div className="aspect-[8.5/11] bg-gray-100 rounded mb-2 flex items-center justify-center">
-                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </div>
-                          <p className="text-sm font-semibold text-gray-900 text-center">
-                            {template.name}
-                          </p>
+                  {/* Template Selection — compact */}
+                  <div className="bg-white rounded-lg shadow-md p-4">
+                    <h2 className="text-sm font-semibold text-gray-700 mb-3">Choose Template</h2>
+                    <div className="flex gap-3">
+                      {[{ value: 'template1', name: 'Template 1' }, { value: 'template2', name: 'Template 2' }].map(t => (
+                        <button key={t.value} type="button" onClick={() => setFormData({ ...formData, template: t.value })}
+                          className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-semibold transition-all ${formData.template === t.value ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                          {t.name}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Tabbed Content Sections */}
-                  <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                      Resume Content
-                    </h2>
-                    
-                    {/* Section Tabs */}
-                    <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200">
-                      {[
-                        { id: 'basic', label: 'Sections' },
-                        { id: 'projects', label: 'Projects' },
-                        { id: 'internships', label: 'Internships' },
-                        { id: 'publications', label: 'Publications' },
-                        { id: 'certifications', label: 'Certifications' },
-                        { id: 'achievements', label: 'Achievements' },
-                        { id: 'courses', label: 'Courses' },
-                        { id: 'positions', label: 'Positions' },
-                        { id: 'social', label: 'Social Links' }
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`px-4 py-2 font-semibold text-sm border-b-2 transition-colors ${
-                            activeTab === tab.id
-                              ? 'border-blue-500 text-blue-600'
-                              : 'border-transparent text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
+                  {/* Resume Content — clean sidebar + content panel */}
+                  <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                    <div className="px-5 py-3 border-b border-gray-200">
+                      <h2 className="text-base font-semibold text-gray-900">Resume Content</h2>
                     </div>
+                    <div className="flex" style={{ minHeight: '420px' }}>
+                      {/* Sidebar */}
+                      <div className="flex-shrink-0 overflow-y-auto border-r border-gray-200" style={{ width: '200px', background: '#f9fafb' }}>
+                        {[
+                          { label: 'BASIC', items: [
+                            { id: 'objective', label: 'Objective', count: null, total: null },
+                            { id: 'personal', label: 'Personal Info', count: null, total: null },
+                          ]},
+                          { label: 'SECTIONS', items: [
+                            { id: 'achievements', label: 'Achievements', count: formData.selectedAchievements.length, total: profile?.achievements?.length || 0 },
+                            { id: 'projects', label: 'Projects', count: formData.selectedProjects.length, total: profile?.projects?.length || 0 },
+                            { id: 'internships', label: 'Internships', count: formData.selectedInternships.length, total: profile?.internships?.length || 0 },
+                            { id: 'skills', label: 'Skills', count: formData.selectedSkillCategories.length, total: (profile?.skills || []).filter(s => s && typeof s === 'object').length },
+                          ]},
+                          { label: 'ACADEMIC', items: [
+                            { id: 'certifications', label: 'Certifications', count: formData.selectedCertifications.length, total: profile?.certifications?.length || 0 },
+                            { id: 'courses', label: 'Courses', count: formData.selectedCourses.length, total: profile?.courses?.length || 0 },
+                            { id: 'positions', label: 'Positions', count: formData.selectedPositionsOfResponsibility.length, total: profile?.positionsOfResponsibility?.length || 0 },
+                            { id: 'publications', label: 'Publications', count: formData.selectedPublications.length, total: profile?.publications?.length || 0 },
+                          ]},
+                          { label: 'OTHER', items: [
+                            { id: 'social', label: 'Social Links', count: formData.selectedSocialLinks.length, total: profile?.socialLinks?.length || 0 },
+                            { id: 'extracurricular', label: 'Extracurricular', count: formData.selectedExtracurricular.length, total: profile?.extracurricular?.length || 0 },
+                          ]},
+                        ].map(group => (
+                          <div key={group.label}>
+                            <div className="px-4 pt-3 pb-1 text-xs font-bold text-gray-400 tracking-widest uppercase">{group.label}</div>
+                            {group.items.map(item => {
+                              const active = activeTab === item.id;
+                              return (
+                                <button key={item.id} type="button" onClick={() => setActiveTab(item.id)}
+                                  className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left ${active ? 'bg-white font-semibold text-blue-700 border-l-2 border-blue-600' : 'text-gray-600 hover:bg-white border-l-2 border-transparent'}`}>
+                                  <span>{item.label}</span>
+                                  {item.total > 0 && (
+                                    <span className={`text-xs font-semibold rounded-full px-1.5 py-0.5 ${active ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-500'}`}>
+                                      {item.count}/{item.total}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
 
-                    {/* Tab Content */}
-                    <div className="space-y-4">
-                      {/* Sections Tab */}
-                      {activeTab === 'basic' && (
-                        <div className="grid grid-cols-2 gap-3">
-                          {Object.keys(formData.sectionsEnabled).map((section) => (
-                            <label key={section} className="flex items-center gap-2 p-3 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={formData.sectionsEnabled[section]}
-                                onChange={() => handleSectionToggle(section)}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                              />
-                              <span className="text-sm font-medium text-gray-700">
-                                {formatSectionName(section)}
-                              </span>
-                            </label>
-                          ))}
+                      {/* Content panel */}
+                      <div className="flex-1 overflow-y-auto p-5 bg-white">
+                        {/* Section header with enable/disable toggle */}
+                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                          <span className="font-semibold text-gray-900 text-sm">
+                            {activeTab === 'positions' ? 'Positions of Responsibility' : activeTab === 'social' ? 'Social Links' : activeTab === 'personal' ? 'Personal Info' : formatSectionName(activeTab)}
+                          </span>
+                          <div className="flex items-center gap-3">
+                            {activeTab !== 'objective' && activeTab !== 'personal' && (
+                              <>
+                                <span className="text-xs text-gray-500">Include section</span>
+                                {(() => {
+                                  const sectionKey = activeTab === 'positions' ? 'positionsOfResponsibility' : activeTab === 'social' ? 'socialLinks' : activeTab;
+                                  const enabled = formData.sectionsEnabled[sectionKey] ?? true;
+                                  return (
+                                    <div onClick={() => handleSectionToggle(sectionKey)} style={{ width: '36px', height: '20px', borderRadius: '10px', cursor: 'pointer', background: enabled ? '#2563eb' : '#d1d5db', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                                      <div style={{ position: 'absolute', top: '3px', left: enabled ? '18px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                                    </div>
+                                  );
+                                })()}
+                                <button type="button" onClick={() => {
+                                  if (activeTab === 'projects') setFormData(f => ({ ...f, selectedProjects: [] }));
+                                  else if (activeTab === 'internships') setFormData(f => ({ ...f, selectedInternships: [] }));
+                                  else if (activeTab === 'certifications') setFormData(f => ({ ...f, selectedCertifications: [] }));
+                                  else if (activeTab === 'publications') setFormData(f => ({ ...f, selectedPublications: [] }));
+                                  else if (activeTab === 'achievements') setFormData(f => ({ ...f, selectedAchievements: [] }));
+                                  else if (activeTab === 'courses') setFormData(f => ({ ...f, selectedCourses: [] }));
+                                  else if (activeTab === 'positions') setFormData(f => ({ ...f, selectedPositionsOfResponsibility: [] }));
+                                  else if (activeTab === 'social') setFormData(f => ({ ...f, selectedSocialLinks: [] }));
+                                  else if (activeTab === 'skills') setFormData(f => ({ ...f, selectedSkillCategories: [] }));
+                                  else if (activeTab === 'extracurricular') setFormData(f => ({ ...f, selectedExtracurricular: [] }));
+                                }} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Deselect all</button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      )}
 
-                      {/* Projects Tab */}
-                      {activeTab === 'projects' && (
-                        <div className="space-y-3">
-                          {profile?.projects && profile.projects.length > 0 ? (
-                            profile.projects.map((project) => (
-                              <label key={project._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedProjects.includes(project._id.toString())}
-                                  onChange={() => handleProjectToggle(project._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{project.title}</p>
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {typeof project.technologies === 'string' ? project.technologies : project.technologies?.join(', ')}
-                                  </p>
+                        {/* Objective */}
+                        {activeTab === 'objective' && (
+                          <div className="space-y-4">
+                            <p className="text-sm text-gray-500">Control whether your career objective appears in the resume.</p>
+                            <div className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors ${formData.sectionsEnabled.objective ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}
+                              onClick={() => handleSectionToggle('objective')}>
+                              <div>
+                                <div className="text-sm font-medium text-gray-800">Include Objective Section</div>
+                                <div className="text-xs text-gray-500 mt-0.5">{profile?.objective ? `"${profile.objective.slice(0, 60)}${profile.objective.length > 60 ? '...' : ''}"` : 'No objective set in profile'}</div>
+                              </div>
+                              <div style={{ width: '36px', height: '20px', borderRadius: '10px', background: formData.sectionsEnabled.objective ? '#2563eb' : '#d1d5db', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+                                <div style={{ position: 'absolute', top: '3px', left: formData.sectionsEnabled.objective ? '18px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Personal Info */}
+                        {activeTab === 'personal' && (
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-500">Choose which personal details appear in the resume header.</p>
+                            {[
+                              { key: 'dob', label: 'Date of Birth', value: 'Shows DOB in resume header' },
+                              { key: 'gender', label: 'Gender', value: 'Shows Gender in resume header' },
+                            ].map(({ key, label, value }) => (
+                              <div key={key} className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors ${formData.sectionsEnabled[key] ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}
+                                onClick={() => handleSectionToggle(key)}>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-800">{label}</div>
+                                  <div className="text-xs text-gray-500 mt-0.5">{value}</div>
                                 </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No projects available. Add projects to your profile first.</p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Internships Tab */}
-                      {activeTab === 'internships' && (
-                        <div className="space-y-3">
-                          {profile?.internships && profile.internships.length > 0 ? (
-                            profile.internships.map((internship) => (
-                              <label key={internship._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedInternships.includes(internship._id.toString())}
-                                  onChange={() => handleInternshipToggle(internship._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{internship.role}</p>
-                                  <p className="text-sm text-gray-600 mt-1">{internship.company}</p>
+                                <div style={{ width: '36px', height: '20px', borderRadius: '10px', background: formData.sectionsEnabled[key] ? '#2563eb' : '#d1d5db', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+                                  <div style={{ position: 'absolute', top: '3px', left: formData.sectionsEnabled[key] ? '18px' : '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
                                 </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No internships available. Add internships to your profile first.</p>
-                          )}
-                        </div>
-                      )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
-                      {/* Publications Tab */}
-                      {activeTab === 'publications' && (
-                        <div className="space-y-3">
-                          {profile?.publications && profile.publications.length > 0 ? (
-                            profile.publications.map((publication) => (
-                              <label key={publication._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedPublications.includes(publication._id.toString())}
-                                  onChange={() => handlePublicationToggle(publication._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{publication.title}</p>
-                                  <p className="text-sm text-gray-600 mt-1">{publication.journal} ({publication.year})</p>
-                                </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No publications available. Add publications to your profile first.</p>
-                          )}
-                        </div>
-                      )}
+                        {/* Skills — show categories with checkboxes */}
+                        {activeTab === 'skills' && (
+                          <div>
+                            {(profile?.skills || []).filter(s => s && typeof s === 'object').length > 0 ? (
+                              <div className="space-y-2">
+                                {(profile.skills).filter(s => s && typeof s === 'object').map((cat, i) => {
+                                  const sel = formData.selectedSkillCategories.includes(cat.category);
+                                  return (
+                                    <label key={i} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                                      <input type="checkbox" checked={sel} onChange={() => {
+                                        setFormData(f => ({
+                                          ...f,
+                                          selectedSkillCategories: sel
+                                            ? f.selectedSkillCategories.filter(c => c !== cat.category)
+                                            : [...f.selectedSkillCategories, cat.category]
+                                        }));
+                                      }} className="mt-0.5 w-4 h-4 text-blue-600 rounded" />
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-800">{cat.category}</div>
+                                        <div className="text-xs text-gray-500 mt-0.5">{(cat.items || []).join(', ')}</div>
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            ) : <p className="text-sm text-gray-400 text-center py-8">No skills added to your profile yet.</p>}
+                          </div>
+                        )}
 
-                      {/* Certifications Tab */}
-                      {activeTab === 'certifications' && (
-                        <div className="space-y-3">
-                          {profile?.certifications && profile.certifications.length > 0 ? (
-                            profile.certifications.map((certification) => (
-                              <label key={certification._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedCertifications.includes(certification._id.toString())}
-                                  onChange={() => handleCertificationToggle(certification._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{certification.name}</p>
-                                  <p className="text-sm text-gray-600 mt-1">{certification.issuer}</p>
-                                </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No certifications available. Add certifications to your profile first.</p>
-                          )}
-                        </div>
-                      )}
+                        {/* Extracurricular — individual item checkboxes */}
+                        {activeTab === 'extracurricular' && (
+                          <div>
+                            {profile?.extracurricular?.length > 0 ? (
+                              <div className="space-y-2">
+                                {profile.extracurricular.map((a, i) => {
+                                  const activityStr = typeof a === 'string' ? a : String(a);
+                                  const sel = formData.selectedExtracurricular.map(x => String(x)).includes(activityStr);
+                                  return (
+                                    <div key={i} onClick={() => {
+                                      setFormData(f => {
+                                        const current = f.selectedExtracurricular.map(x => String(x));
+                                        const updated = current.includes(activityStr)
+                                          ? current.filter(x => x !== activityStr)
+                                          : [...current, activityStr];
+                                        return { ...f, selectedExtracurricular: updated };
+                                      });
+                                    }} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                                      <div style={{ width: '16px', height: '16px', borderRadius: '3px', border: `2px solid ${sel ? '#2563eb' : '#9ca3af'}`, background: sel ? '#2563eb' : '#fff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {sel && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                      </div>
+                                      <span className="text-sm text-gray-800">{activityStr}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : <p className="text-sm text-gray-400 text-center py-8">No extracurricular activities added yet.</p>}
+                          </div>
+                        )}
 
-                      {/* Achievements Tab */}
-                      {activeTab === 'achievements' && (
-                        <div className="space-y-3">
-                          {profile?.achievements && profile.achievements.length > 0 ? (
-                            profile.achievements.map((achievement, index) => (
-                              <label key={index} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedAchievements.includes(index)}
-                                  onChange={() => handleAchievementToggle(index)}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <p className="flex-1 text-sm text-gray-900">{achievement}</p>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No achievements available. Add achievements to your profile first.</p>
-                          )}
-                        </div>
-                      )}
+                        {/* Selectable items */}
+                        <div className="space-y-2">
+                          {activeTab === 'projects' && (profile?.projects?.length > 0 ? profile.projects.map(p => {
+                            const sel = formData.selectedProjects.includes(p._id.toString());
+                            return (<label key={p._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handleProjectToggle(p._id.toString())} className="w-4 h-4 text-blue-600 rounded" />
+                              <span className="text-sm font-medium text-gray-800">{p.title}</span>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No projects in your profile.</p>)}
 
-                      {/* Courses Tab */}
-                      {activeTab === 'courses' && (
-                        <div className="space-y-3">
-                          {profile?.courses && profile.courses.length > 0 ? (
-                            profile.courses.map((course) => (
-                              <label key={course._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedCourses.includes(course._id.toString())}
-                                  onChange={() => handleCourseToggle(course._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{course.name}</p>
-                                  {course.platform && <p className="text-sm text-gray-600 mt-1">{course.platform}</p>}
-                                </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No courses available. Add courses to your profile first.</p>
-                          )}
-                        </div>
-                      )}
+                          {activeTab === 'internships' && (profile?.internships?.length > 0 ? profile.internships.map(x => {
+                            const sel = formData.selectedInternships.includes(x._id.toString());
+                            return (<label key={x._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handleInternshipToggle(x._id.toString())} className="w-4 h-4 text-blue-600 rounded" />
+                              <div><div className="text-sm font-medium text-gray-800">{x.role}</div><div className="text-xs text-gray-500">{x.company}</div></div>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No internships in your profile.</p>)}
 
-                      {/* Positions of Responsibility Tab */}
-                      {activeTab === 'positions' && (
-                        <div className="space-y-3">
-                          {profile?.positionsOfResponsibility && profile.positionsOfResponsibility.length > 0 ? (
-                            profile.positionsOfResponsibility.map((position) => (
-                              <label key={position._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedPositionsOfResponsibility.includes(position._id.toString())}
-                                  onChange={() => handlePositionToggle(position._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{position.title}</p>
-                                  {position.organization && <p className="text-sm text-gray-600 mt-1">{position.organization}</p>}
-                                </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No positions available. Add positions of responsibility to your profile first.</p>
-                          )}
-                        </div>
-                      )}
+                          {activeTab === 'certifications' && (profile?.certifications?.length > 0 ? profile.certifications.map(c => {
+                            const sel = formData.selectedCertifications.includes(c._id.toString());
+                            return (<label key={c._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handleCertificationToggle(c._id.toString())} className="w-4 h-4 text-blue-600 rounded" />
+                              <div><div className="text-sm font-medium text-gray-800">{c.name}</div><div className="text-xs text-gray-500">{c.issuer}</div></div>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No certifications in your profile.</p>)}
 
-                      {/* Social Links Tab */}
-                      {activeTab === 'social' && (
-                        <div className="space-y-3">
-                          {profile?.socialLinks && Array.isArray(profile.socialLinks) && profile.socialLinks.length > 0 ? (
-                            profile.socialLinks.map((link) => (
-                              <label key={link._id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer border-2 border-transparent hover:border-blue-200">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.selectedSocialLinks.includes(link._id.toString())}
-                                  onChange={() => handleSocialLinkToggle(link._id.toString())}
-                                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-900">{link.title}</p>
-                                  <p className="text-sm text-gray-600 mt-1 break-all">{link.url}</p>
-                                </div>
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500 text-center py-8">No social links available. Add social links to your profile first.</p>
-                          )}
+                          {activeTab === 'publications' && (profile?.publications?.length > 0 ? profile.publications.map(p => {
+                            const sel = formData.selectedPublications.includes(p._id.toString());
+                            return (<label key={p._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handlePublicationToggle(p._id.toString())} className="w-4 h-4 text-blue-600 rounded" />
+                              <div><div className="text-sm font-medium text-gray-800">{p.title}</div><div className="text-xs text-gray-500">{p.journal}</div></div>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No publications in your profile.</p>)}
+
+                          {activeTab === 'achievements' && (profile?.achievements?.length > 0 ? profile.achievements.map((a, i) => {
+                            const sel = formData.selectedAchievements.includes(i);
+                            return (<label key={i} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handleAchievementToggle(i)} className="w-4 h-4 text-blue-600 rounded" />
+                              <span className="text-sm text-gray-800">{a}</span>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No achievements in your profile.</p>)}
+
+                          {activeTab === 'courses' && (profile?.courses?.length > 0 ? profile.courses.map((c, i) => {
+                            const id = c._id ? c._id.toString() : (typeof c === 'string' ? c : String(i));
+                            const sel = formData.selectedCourses.includes(id);
+                            const name = typeof c === 'string' ? c : c.name;
+                            return (<label key={id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handleCourseToggle(id)} className="w-4 h-4 text-blue-600 rounded" />
+                              <span className="text-sm font-medium text-gray-800">{name}</span>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No courses in your profile.</p>)}
+
+                          {activeTab === 'positions' && (profile?.positionsOfResponsibility?.length > 0 ? profile.positionsOfResponsibility.map(p => {
+                            const sel = formData.selectedPositionsOfResponsibility.includes(p._id.toString());
+                            return (<label key={p._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handlePositionToggle(p._id.toString())} className="w-4 h-4 text-blue-600 rounded" />
+                              <div><div className="text-sm font-medium text-gray-800">{p.title}</div><div className="text-xs text-gray-500">{p.organization}</div></div>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No positions in your profile.</p>)}
+
+                          {activeTab === 'social' && (profile?.socialLinks?.length > 0 ? profile.socialLinks.map(l => {
+                            const sel = formData.selectedSocialLinks.includes(l._id.toString());
+                            return (<label key={l._id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${sel ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
+                              <input type="checkbox" checked={sel} onChange={() => handleSocialLinkToggle(l._id.toString())} className="w-4 h-4 text-blue-600 rounded" />
+                              <div><div className="text-sm font-medium text-gray-800">{l.title}</div><div className="text-xs text-gray-500 truncate">{l.url}</div></div>
+                            </label>);
+                          }) : <p className="text-sm text-gray-400 text-center py-8">No social links in your profile.</p>)}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </form>
               </div>
-
               {/* Right Panel: Live Preview */}
               <div className="lg:sticky lg:top-24 lg:self-start">
                 <div className="bg-white rounded-lg shadow-md p-4">

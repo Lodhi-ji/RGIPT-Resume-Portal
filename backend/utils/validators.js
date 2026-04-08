@@ -198,16 +198,20 @@ const profileValidation = [
     .isLength({ min: 1, max: 500 })
     .withMessage('Bullet point must not exceed 500 characters'),
 
-  // Skills validation
+  // Skills validation — now categorized objects {category, items:[]}
   body('skills')
     .optional()
     .isArray({ max: 50 })
-    .withMessage('Maximum 50 skills allowed'),
-  body('skills.*')
+    .withMessage('Maximum 50 skill categories allowed'),
+  body('skills.*.category')
     .optional({ checkFalsy: true })
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Each skill must not exceed 100 characters'),
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage('Skill category name must not exceed 100 characters'),
+  body('skills.*.items')
+    .optional()
+    .isArray()
+    .withMessage('Skill items must be an array'),
 
   // Achievements validation
   body('achievements')
@@ -219,6 +223,36 @@ const profileValidation = [
     .trim()
     .isLength({ min: 1, max: 500 })
     .withMessage('Each achievement must not exceed 500 characters'),
+
+  // Class 10 validation
+  body('class10.school')
+    .optional()
+    .notEmpty()
+    .isLength({ max: 200 })
+    .withMessage('School name must not exceed 200 characters'),
+  body('class10.percentage')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('10th percentage must be between 0 and 100'),
+  body('class10.year')
+    .optional()
+    .matches(/^(19[89]\d|20[0-2]\d)$/)
+    .withMessage('10th passing year must be a 4-digit year between 1980 and current year'),
+
+  // Class 12 validation
+  body('class12.school')
+    .optional()
+    .notEmpty()
+    .isLength({ max: 200 })
+    .withMessage('School name must not exceed 200 characters'),
+  body('class12.percentage')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('12th percentage must be between 0 and 100'),
+  body('class12.year')
+    .optional()
+    .matches(/^(19[89]\d|20[0-2]\d)$/)
+    .withMessage('12th passing year must be a 4-digit year between 1980 and current year'),
 ];
 
 // Validation rules for resume version

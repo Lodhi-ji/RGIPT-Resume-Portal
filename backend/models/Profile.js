@@ -17,8 +17,8 @@ const profileSchema = new mongoose.Schema({
     trim: true
   },
   skills: [{
-    type: String,
-    trim: true
+    category: { type: String, trim: true, required: true },
+    items: [{ type: String, trim: true }]
   }],
   projects: [{
     title: {
@@ -114,7 +114,11 @@ const profileSchema = new mongoose.Schema({
     description: {
       type: String,
       trim: true
-    }
+    },
+    bullets: [{
+      type: String,
+      trim: true
+    }]
   }],
   certifications: [{
     name: {
@@ -132,6 +136,10 @@ const profileSchema = new mongoose.Schema({
       trim: true
     },
     certLink: {
+      type: String,
+      trim: true
+    },
+    description: {
       type: String,
       trim: true
     }
@@ -156,22 +164,7 @@ const profileSchema = new mongoose.Schema({
       trim: true
     }
   }],
-  courses: [{
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    platform: {
-      type: String,
-      trim: true
-    },
-    completionDate: Date,
-    link: {
-      type: String,
-      trim: true
-    }
-  }],
+  courses: [{ type: String, trim: true }],
   socialLinks: [{
     title: {
       type: String,

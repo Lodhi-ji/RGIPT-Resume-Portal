@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../../services/api';
 import '../../styles/ResumeCard.css';
+import PdfDownloadOverlay from '../common/PdfDownloadOverlay';
 
 const ResumeCard = ({ resume, onEdit, onDelete }) => {
   const [generating, setGenerating] = useState(false);
@@ -53,6 +54,7 @@ const ResumeCard = ({ resume, onEdit, onDelete }) => {
 
   return (
     <div className="resume-card">
+      <PdfDownloadOverlay visible={generating} />
       <div className="resume-card-header">
         <h3>{resume.name}</h3>
         <span className="template-badge">{resume.template}</span>
@@ -83,19 +85,19 @@ const ResumeCard = ({ resume, onEdit, onDelete }) => {
           onClick={handleGenerate}
           disabled={generating}
         >
-          {generating ? 'Generating...' : '📥 Download PDF'}
+          {generating ? 'Generating...' : 'Download PDF'}
         </button>
         <button 
           className="action-btn edit-btn" 
           onClick={() => onEdit(resume)}
         >
-          ✏️ Edit
+          Edit
         </button>
         <button 
           className="action-btn delete-btn" 
           onClick={() => onDelete(resume._id)}
         >
-          🗑️ Delete
+          Delete
         </button>
       </div>
     </div>

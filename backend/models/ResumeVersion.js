@@ -66,6 +66,10 @@ const resumeVersionSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     },
+    extracurricular: {
+      type: Boolean,
+      default: true
+    },
     objective: {
       type: Boolean,
       default: true
@@ -94,6 +98,12 @@ const resumeVersionSchema = new mongoose.Schema({
   }],
   selectedPositionsOfResponsibility: [{
     type: mongoose.Schema.Types.ObjectId
+  }],
+  selectedSkillCategories: [{
+    type: String
+  }],
+  selectedExtracurricular: [{
+    type: String
   }]
 }, {
   timestamps: true

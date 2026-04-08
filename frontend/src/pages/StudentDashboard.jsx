@@ -4,6 +4,7 @@ import api from '../services/api';
 import ChangePassword from '../components/ChangePassword';
 import FirstLoginModal from '../components/FirstLoginModal';
 import { useAuth } from '../context/AuthContext';
+import PdfDownloadOverlay from '../components/common/PdfDownloadOverlay';
 
 const StudentDashboard = () => {
   const [data, setData] = useState(null);
@@ -11,6 +12,7 @@ const StudentDashboard = () => {
   const [error, setError] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const { isFirstLogin, updateIsFirstLogin } = useAuth();
 
   useEffect(() => {
@@ -56,12 +58,11 @@ const StudentDashboard = () => {
   };
 
   const handleDownload = async (resumeId, resumeName) => {
+    setDownloadingPdf(true);
     try {
       const response = await api.get(`/resume-versions/${resumeId}/generate`, {
         responseType: 'blob'
       });
-
-      // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -73,6 +74,8 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error('Error downloading resume:', error);
       alert('Failed to download resume. Please try again.');
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -106,6 +109,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <PdfDownloadOverlay visible={downloadingPdf} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <div className="mb-8 flex justify-between items-start">

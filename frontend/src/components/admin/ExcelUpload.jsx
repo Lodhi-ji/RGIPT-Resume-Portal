@@ -76,15 +76,11 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
                     <ul>
                       <li>name, rollNo, instituteEmail, branch, degree</li>
                       <li>cpi, graduationYear, semester</li>
-                      <li>10th percentage, 10th school</li>
-                      <li>12th percentage, 12th school</li>
                     </ul>
                   </li>
                   <li>
                     Optional columns:
                     <ul>
-                      <li>10th year, 12th year</li>
-                      <li>10th board, 12th board (e.g. CBSE, MP Board)</li>
                       <li>dob — Date of Birth (format: dd/mm/yyyy, e.g. 22/08/2004)</li>
                       <li>gender — Male or Female</li>
                     </ul>
@@ -149,12 +145,12 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
 
               {result.createdStudents?.length > 0 && (
                 <div className="success-list">
-                  <h4>✅ Newly Created ({result.createdStudents.length})</h4>
+                  <h4>Created ({result.createdStudents.length})</h4>
                   <div className="student-list">
                     {result.createdStudents.map((student, index) => (
                       <div key={index} className="student-item">
                         <strong>{student.name}</strong> — {student.rollNo}
-                        {student.warning && <div className="student-warning">⚠️ {student.warning}</div>}
+                        {student.warning && <div className="student-warning">Warning: {student.warning}</div>}
                       </div>
                     ))}
                   </div>
@@ -163,12 +159,12 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
 
               {result.updatedStudents?.length > 0 && (
                 <div className="success-list">
-                  <h4>🔄 Updated ({result.updatedStudents.length})</h4>
+                  <h4>Updated ({result.updatedStudents.length})</h4>
                   <div className="student-list">
                     {result.updatedStudents.map((student, index) => (
                       <div key={index} className="student-item">
                         <strong>{student.name}</strong> — {student.rollNo}
-                        {student.warning && <div className="student-warning">⚠️ {student.warning}</div>}
+                        {student.warning && <div className="student-warning">Warning: {student.warning}</div>}
                       </div>
                     ))}
                   </div>
@@ -177,7 +173,7 @@ const ExcelUpload = ({ onClose, onUploadComplete }) => {
 
               {result.failedRows?.length > 0 && (
                 <div className="failed-list">
-                  <h4>❌ Failed ({result.failedRows.length})</h4>
+                  <h4>Failed ({result.failedRows.length})</h4>
                   <div className="error-list">
                     {result.failedRows.map((failed, index) => (
                       <div key={index} className="error-item">

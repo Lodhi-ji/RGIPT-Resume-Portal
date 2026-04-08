@@ -105,8 +105,20 @@ const updateProfile = async (req, res) => {
       courses,
       socialLinks,
       extracurricular,
-      objective
+      objective,
+      class10,
+      class12
     } = req.body;
+
+    // Normalize skills — support both old flat string array and new categorized format
+    const normalizedSkills = skills
+      ? skills.filter(s => s && typeof s === 'object' && s.category)
+      : undefined;
+
+    // Normalize courses — support both old object format and new string format
+    const normalizedCourses = courses
+      ? courses.map(c => typeof c === 'string' ? c : (c?.name || '')).filter(Boolean)
+      : undefined;
 
     // Find profile
     let profile = await Profile.findOne({ studentId: req.user.id });
@@ -117,13 +129,13 @@ const updateProfile = async (req, res) => {
         studentId: req.user.id,
         phone,
         alternateEmail,
-        skills: skills || [],
+        skills: normalizedSkills || [],
         projects: projects || [],
         internships: internships || [],
         achievements: achievements || [],
         certifications: certifications || [],
         positionsOfResponsibility: positionsOfResponsibility || [],
-        courses: courses || [],
+        courses: normalizedCourses || [],
         socialLinks: socialLinks || {},
         extracurricular: extracurricular || [],
         objective: objective || ''
@@ -132,13 +144,13 @@ const updateProfile = async (req, res) => {
       // Update existing profile
       profile.phone = phone !== undefined ? phone : profile.phone;
       profile.alternateEmail = alternateEmail !== undefined ? alternateEmail : profile.alternateEmail;
-      profile.skills = skills !== undefined ? skills : profile.skills;
+      profile.skills = normalizedSkills !== undefined ? normalizedSkills : profile.skills;
       profile.projects = projects !== undefined ? projects : profile.projects;
       profile.internships = internships !== undefined ? internships : profile.internships;
       profile.achievements = achievements !== undefined ? achievements : profile.achievements;
       profile.certifications = certifications !== undefined ? certifications : profile.certifications;
       profile.positionsOfResponsibility = positionsOfResponsibility !== undefined ? positionsOfResponsibility : profile.positionsOfResponsibility;
-      profile.courses = courses !== undefined ? courses : profile.courses;
+      profile.courses = normalizedCourses !== undefined ? normalizedCourses : profile.courses;
       profile.socialLinks = socialLinks !== undefined ? socialLinks : profile.socialLinks;
       profile.extracurricular = extracurricular !== undefined ? extracurricular : profile.extracurricular;
       profile.objective = objective !== undefined ? objective : profile.objective;
@@ -146,11 +158,44 @@ const updateProfile = async (req, res) => {
       await profile.save();
     }
 
-    res.status(200).json({
+    // Update class10/class12 on Student document if provided
+    // Only update school, percentage, and year — preserve board
+    let updatedStudent = null;
+    if (class10 || class12) {
+      const studentUpdate = {};
+      if (class10) {
+        studentUpdate['class10.school'] = class10.school;
+        studentUpdate['class10.percentage'] = class10.percentage;
+        studentUpdate['class10.year'] = class10.year;
+        if (class10.board !== undefined) studentUpdate['class10.board'] = class10.board;
+      }
+      if (class12) {
+        studentUpdate['class12.school'] = class12.school;
+        studentUpdate['class12.percentage'] = class12.percentage;
+        studentUpdate['class12.year'] = class12.year;
+        if (class12.board !== undefined) studentUpdate['class12.board'] = class12.board;
+      }
+      updatedStudent = await Student.findByIdAndUpdate(
+        req.user.id,
+        studentUpdate,
+        { runValidators: true, new: true }
+      );
+    }
+
+    const response = {
       success: true,
       message: 'Profile updated successfully',
       profile
-    });
+    };
+
+    if (updatedStudent) {
+      response.student = {
+        class10: updatedStudent.class10,
+        class12: updatedStudent.class12
+      };
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({

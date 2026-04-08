@@ -2,19 +2,29 @@ import { useState } from 'react';
 import api from '../../services/api';
 import { validateProfileForm } from '../../utils/validation';
 
+const NAVY = '#1a3a6b';
+
+const TAB_GROUPS = [
+  { label: 'Basic', tabs: ['contact', 'school-education', 'objective'] },
+  { label: 'Experience', tabs: ['skills', 'projects', 'internships', 'certifications'] },
+  { label: 'Academic', tabs: ['publications', 'positions', 'courses'] },
+  { label: 'More', tabs: ['achievements', 'extracurricular', 'social'] },
+];
+
 const TABS = [
-  { id: 'contact',      label: 'Contact',       icon: '👤' },
-  { id: 'objective',    label: 'Objective',      icon: '🎯' },
-  { id: 'skills',       label: 'Skills',         icon: '🛠️' },
-  { id: 'projects',     label: 'Projects',       icon: '💻' },
-  { id: 'internships',  label: 'Internships',    icon: '🏢' },
-  { id: 'certifications', label: 'Certifications', icon: '🏅' },
-  { id: 'publications', label: 'Publications',   icon: '📄' },
-  { id: 'positions',    label: 'Positions',      icon: '🎖️' },
-  { id: 'courses',      label: 'Courses',        icon: '📚' },
-  { id: 'achievements', label: 'Achievements',   icon: '🏆' },
-  { id: 'extracurricular', label: 'Extracurricular', icon: '⚡' },
-  { id: 'social',       label: 'Social Links',   icon: '🔗' },
+  { id: 'contact',        label: 'Contact' },
+  { id: 'school-education', label: 'School Education' },
+  { id: 'objective',      label: 'Objective' },
+  { id: 'skills',         label: 'Skills' },
+  { id: 'projects',       label: 'Projects' },
+  { id: 'internships',    label: 'Internships' },
+  { id: 'certifications', label: 'Certifications' },
+  { id: 'publications',   label: 'Publications' },
+  { id: 'positions',      label: 'Positions' },
+  { id: 'courses',        label: 'Courses' },
+  { id: 'achievements',   label: 'Achievements' },
+  { id: 'extracurricular', label: 'Extracurricular' },
+  { id: 'social',         label: 'Social Links' },
 ];
 
 const ProfileForm = ({ profile, student, onUpdate }) => {
@@ -22,20 +32,28 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
   const [formData, setFormData] = useState({
     phone: profile?.phone || '',
     alternateEmail: profile?.alternateEmail || '',
-    skills: profile?.skills || [],
+    skills: (profile?.skills || []).map(s => typeof s === 'string' ? null : s).filter(Boolean),
     achievements: profile?.achievements || [],
     projects: profile?.projects || [],
     internships: profile?.internships || [],
     publications: profile?.publications || [],
     certifications: profile?.certifications || [],
     positionsOfResponsibility: profile?.positionsOfResponsibility || [],
-    courses: profile?.courses || [],
+    courses: (profile?.courses || []).map(c => typeof c === 'string' ? c : (c?.name || '')).filter(Boolean),
     socialLinks: profile?.socialLinks || [],
     extracurricular: profile?.extracurricular || [],
     objective: profile?.objective || '',
   });
 
-  const [newSkill, setNewSkill] = useState('');
+  const [schoolData, setSchoolData] = useState({
+    class10: { school: student?.class10?.school || '', percentage: student?.class10?.percentage ?? '', year: student?.class10?.year || '', board: student?.class10?.board || '' },
+    class12: { school: student?.class12?.school || '', percentage: student?.class12?.percentage ?? '', year: student?.class12?.year || '', board: student?.class12?.board || '' },
+  });
+
+  const handleSchoolChange = (level, field, value) => {
+    setSchoolData(prev => ({ ...prev, [level]: { ...prev[level], [field]: value } }));
+  };
+
   const [newAchievement, setNewAchievement] = useState('');
   const [newExtracurricular, setNewExtracurricular] = useState('');
   const [saving, setSaving] = useState(false);
@@ -62,13 +80,24 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const addSkill = () => {
-    if (newSkill.trim()) {
-      setFormData(prev => ({ ...prev, skills: [...prev.skills, newSkill.trim()] }));
-      setNewSkill('');
+  const [newSkill, setNewSkill] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categorySkillInputs, setCategorySkillInputs] = useState({});
+
+  const addSkillCategory = () => {
+    if (newCategoryName.trim()) {
+      setFormData(prev => ({ ...prev, skills: [...(prev.skills || []), { category: newCategoryName.trim(), items: [] }] }));
+      setNewCategoryName('');
     }
   };
-  const removeSkill = (i) => setFormData(prev => ({ ...prev, skills: prev.skills.filter((_, idx) => idx !== i) }));
+  const removeSkillCategory = (ci) => setFormData(prev => ({ ...prev, skills: prev.skills.filter((_, i) => i !== ci) }));
+  const addSkillToCategory = (ci) => {
+    const val = categorySkillInputs[ci] || '';
+    if (!val.trim()) return;
+    setFormData(prev => ({ ...prev, skills: prev.skills.map((cat, i) => i === ci ? { ...cat, items: [...(cat.items || []), val.trim()] } : cat) }));
+    setCategorySkillInputs(prev => ({ ...prev, [ci]: '' }));
+  };
+  const removeSkillFromCategory = (ci, si) => setFormData(prev => ({ ...prev, skills: prev.skills.map((cat, i) => i === ci ? { ...cat, items: cat.items.filter((_, j) => j !== si) } : cat) }));
 
   const addAchievement = () => {
     if (newAchievement.trim()) {
@@ -108,15 +137,23 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
   const updatePOR = (i, field, value) => setFormData(prev => ({ ...prev, positionsOfResponsibility: prev.positionsOfResponsibility.map((x, idx) => idx === i ? { ...x, [field]: value } : x) }));
   const removePOR = (i) => setFormData(prev => ({ ...prev, positionsOfResponsibility: prev.positionsOfResponsibility.filter((_, idx) => idx !== i) }));
 
-  const addCourse = () => setFormData(prev => ({ ...prev, courses: [...prev.courses, { name: '', platform: '', completionDate: '', link: '' }] }));
-  const updateCourse = (i, field, value) => setFormData(prev => ({ ...prev, courses: prev.courses.map((x, idx) => idx === i ? { ...x, [field]: value } : x) }));
+  const [newCourse, setNewCourse] = useState('');
+  const addCourse = () => {
+    if (newCourse.trim()) {
+      setFormData(prev => ({ ...prev, courses: [...prev.courses, newCourse.trim()] }));
+      setNewCourse('');
+    }
+  };
   const removeCourse = (i) => setFormData(prev => ({ ...prev, courses: prev.courses.filter((_, idx) => idx !== i) }));
 
-  const addPublication = () => setFormData(prev => ({ ...prev, publications: [...prev.publications, { title: '', journal: '', year: '', paperLink: '', description: '' }] }));
+  const addPublication = () => setFormData(prev => ({ ...prev, publications: [...prev.publications, { title: '', journal: '', year: '', paperLink: '', description: '', bullets: [''] }] }));
   const updatePublication = (i, field, value) => setFormData(prev => ({ ...prev, publications: prev.publications.map((x, idx) => idx === i ? { ...x, [field]: value } : x) }));
   const removePublication = (i) => setFormData(prev => ({ ...prev, publications: prev.publications.filter((_, idx) => idx !== i) }));
+  const addPublicationBullet = (pi) => setFormData(prev => ({ ...prev, publications: prev.publications.map((p, i) => i === pi ? { ...p, bullets: [...(p.bullets || []), ''] } : p) }));
+  const updatePublicationBullet = (pi, bi, value) => setFormData(prev => ({ ...prev, publications: prev.publications.map((p, i) => i === pi ? { ...p, bullets: p.bullets.map((b, j) => j === bi ? value : b) } : p) }));
+  const removePublicationBullet = (pi, bi) => setFormData(prev => ({ ...prev, publications: prev.publications.map((p, i) => i === pi ? { ...p, bullets: p.bullets.filter((_, j) => j !== bi) } : p) }));
 
-  const addCertification = () => setFormData(prev => ({ ...prev, certifications: [...prev.certifications, { name: '', issuer: '', issueDate: '', certLink: '' }] }));
+  const addCertification = () => setFormData(prev => ({ ...prev, certifications: [...prev.certifications, { name: '', issuer: '', issueDate: '', certLink: '', description: '' }] }));
   const updateCertification = (i, field, value) => setFormData(prev => ({ ...prev, certifications: prev.certifications.map((x, idx) => idx === i ? { ...x, [field]: value } : x) }));
   const removeCertification = (i) => setFormData(prev => ({ ...prev, certifications: prev.certifications.filter((_, idx) => idx !== i) }));
 
@@ -126,8 +163,9 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
       ...formData,
       projects: formData.projects.map(p => ({ ...p, bullets: (p.bullets || []).filter(b => b.trim() !== '') })),
       internships: formData.internships.map(x => ({ ...x, bullets: (x.bullets || []).filter(b => b.trim() !== '') })),
+      publications: formData.publications.map(p => ({ ...p, bullets: (p.bullets || []).filter(b => b.trim() !== '') })),
     };
-    const errors = validateProfileForm(cleanedFormData);
+    const errors = validateProfileForm(cleanedFormData, schoolData);
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       // Find which tab has errors and switch to it
@@ -141,6 +179,7 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
       else if (errorKey.startsWith('socialLink_')) setActiveTab('social');
       else if (errorKey.startsWith('achievement_')) setActiveTab('achievements');
       else if (errorKey === 'phone' || errorKey === 'alternateEmail') setActiveTab('contact');
+      else if (errorKey.startsWith('class10') || errorKey.startsWith('class12')) setActiveTab('school-education');
       setMessage('Please fix the errors highlighted below.');
       return;
     }
@@ -148,8 +187,15 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
     setSaving(true);
     setMessage('');
     try {
-      const response = await api.put('/students/profile', cleanedFormData);
-      onUpdate(response.data.profile);
+      const response = await api.put('/students/profile', { ...cleanedFormData, class10: schoolData.class10, class12: schoolData.class12 });
+      if (response.data.student) {
+        const s = response.data.student;
+        setSchoolData({
+          class10: { school: s.class10?.school || '', percentage: s.class10?.percentage ?? '', year: s.class10?.year || '', board: s.class10?.board || '' },
+          class12: { school: s.class12?.school || '', percentage: s.class12?.percentage ?? '', year: s.class12?.year || '', board: s.class12?.board || '' },
+        });
+      }
+      onUpdate(response.data.profile, response.data.student);
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -186,9 +232,15 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
     return `${dd}/${mm}/${yyyy}`;
   };
 
-  const inputCls = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors';
-  const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
+  const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:outline-none transition-colors text-sm';
+  const labelCls = 'block mb-1' ;
   const cardCls = 'bg-gray-50 rounded-lg p-5 border border-gray-200 space-y-4';
+
+  const Label = ({ children, required }) => (
+    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '4px' }}>
+      {children}{required && <span style={{ color: '#ef4444', marginLeft: '2px' }}>*</span>}
+    </label>
+  );
 
   const InlineErrors = ({ errors }) => errors.length === 0 ? null : (
     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -200,12 +252,13 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
   );
 
   const tabCount = (tab) => {
-    const map = { skills: formData.skills.length, projects: formData.projects.length, internships: formData.internships.length, certifications: formData.certifications.length, publications: formData.publications.length, positions: formData.positionsOfResponsibility.length, courses: formData.courses.length, achievements: formData.achievements.length, extracurricular: formData.extracurricular.length, social: formData.socialLinks.length };
+    if (tab === 'skills') return (formData.skills || []).reduce((sum, cat) => sum + (cat.items?.length || 0), 0);
+    const map = { projects: formData.projects.length, internships: formData.internships.length, certifications: formData.certifications.length, publications: formData.publications.length, positions: formData.positionsOfResponsibility.length, courses: formData.courses.length, achievements: formData.achievements.length, extracurricular: formData.extracurricular.length, social: formData.socialLinks.length };
     return map[tab] || 0;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-7xl mx-auto">
+    <form onSubmit={handleSubmit} style={{ width: '100%' }}>
       {/* Top bar */}
       <div className="flex items-center justify-between mb-4 px-1">
         <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
@@ -216,7 +269,7 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
             </span>
           )}
           <button type="submit" disabled={saving}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 transition-colors">
+            style={{ background: NAVY, color: '#fff', padding: '8px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? 'Saving...' : 'Save Profile'}
           </button>
         </div>
@@ -224,29 +277,48 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
 
       <div className="flex gap-6">
         {/* Sidebar */}
-        <aside className="w-52 flex-shrink-0">
+        <aside style={{ width: '260px', flexShrink: 0 }}>
           <nav className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden sticky top-4">
-            {TABS.map(tab => {
-              const count = tabCount(tab.id);
-              return (
-                <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors border-l-4 ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}>
-                  <span className="flex items-center gap-2">
-                    <span>{tab.icon}</span>
-                    <span>{tab.label}</span>
-                  </span>
-                  {count > 0 && (
-                    <span className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${activeTab === tab.id ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {TAB_GROUPS.map(group => (
+              <div key={group.label}>
+                <div style={{
+                  fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em',
+                  textTransform: 'uppercase', color: '#9ca3af',
+                  padding: '10px 16px 4px', borderTop: group.label !== 'Basic' ? '1px solid #f3f4f6' : 'none'
+                }}>
+                  {group.label}
+                </div>
+                {group.tabs.map(tabId => {
+                  const tab = TABS.find(t => t.id === tabId);
+                  if (!tab) return null;
+                  const count = tabCount(tab.id);
+                  const active = activeTab === tab.id;
+                  return (
+                    <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '9px 16px', fontSize: '13px', fontWeight: active ? 600 : 500,
+                        borderLeft: active ? `3px solid ${NAVY}` : '3px solid transparent',
+                        background: active ? '#eef2ff' : 'transparent',
+                        color: active ? NAVY : '#4b5563',
+                        cursor: 'pointer', border: 'none', textAlign: 'left', transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f9fafb'; }}
+                      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <span>{tab.label}</span>
+                      {count > 0 && (
+                        <span style={{
+                          fontSize: '10px', fontWeight: 700, borderRadius: '10px',
+                          padding: '1px 6px', background: active ? NAVY : '#e5e7eb',
+                          color: active ? '#fff' : '#6b7280'
+                        }}>{count}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </aside>
 
@@ -266,18 +338,84 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
                   <label className={labelCls}>Alternate Email</label>
                   <input type="email" name="alternateEmail" value={formData.alternateEmail} onChange={handleChange} placeholder="your.email@example.com" className={inputCls} />
                 </div>
-                <div>
-                  <label className={labelCls}>Date of Birth <span className="text-xs text-gray-400 font-normal">(set by admin)</span></label>
-                  <div className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 text-sm border border-gray-200">
-                    {formatDob(student?.dob)}
+              </div>
+            </div>
+          )}
+
+          {/* SCHOOL EDUCATION */}
+          {activeTab === 'school-education' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">School Education</h3>
+                <p className="text-sm text-gray-500 mt-1">Enter your 10th and 12th standard details. This section is mandatory and cannot be skipped.</p>
+              </div>
+
+              {/* 10th Standard */}
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div style={{ background: NAVY, color: '#fff', padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderLeft: `4px solid #0ea5e9` }}>
+                  10th Standard (Secondary)
+                </div>
+                <div className="p-5 bg-gray-50 space-y-3">
+                  <div>
+                    <Label required>School Name</Label>
+                    <input type="text" value={schoolData.class10.school} onChange={e => handleSchoolChange('class10', 'school', e.target.value)} placeholder="Enter full school name" className={inputCls} />
+                    {validationErrors['class10.school'] && <p className="text-xs text-red-600 mt-1">{validationErrors['class10.school']}</p>}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label required>Percentage / CGPA</Label>
+                      <input type="number" min="0" max="100" step="0.01" value={schoolData.class10.percentage} onChange={e => handleSchoolChange('class10', 'percentage', e.target.value)} placeholder="e.g. 85.5" className={inputCls} />
+                      {validationErrors['class10.percentage'] && <p className="text-xs text-red-600 mt-1">{validationErrors['class10.percentage']}</p>}
+                    </div>
+                    <div>
+                      <Label required>Passing Year</Label>
+                      <input type="number" min="1980" max={new Date().getFullYear()} value={schoolData.class10.year} onChange={e => handleSchoolChange('class10', 'year', e.target.value)} placeholder="e.g. 2018" className={inputCls} />
+                      {validationErrors['class10.year'] && <p className="text-xs text-red-600 mt-1">{validationErrors['class10.year']}</p>}
+                    </div>
+                    <div>
+                      <Label>Board</Label>
+                      <input type="text" value={schoolData.class10.board} onChange={e => handleSchoolChange('class10', 'board', e.target.value)} placeholder="e.g. CBSE, ICSE" className={inputCls} />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className={labelCls}>Gender <span className="text-xs text-gray-400 font-normal">(set by admin)</span></label>
-                  <div className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 text-sm border border-gray-200">
-                    {student?.gender || 'Not provided'}
+              </div>
+
+              {/* 12th Standard */}
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div style={{ background: NAVY, color: '#fff', padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderLeft: `4px solid #0ea5e9` }}>
+                  12th Standard (Higher Secondary)
+                </div>
+                <div className="p-5 bg-gray-50 space-y-3">
+                  <div>
+                    <Label required>School Name</Label>
+                    <input type="text" value={schoolData.class12.school} onChange={e => handleSchoolChange('class12', 'school', e.target.value)} placeholder="Enter full school name" className={inputCls} />
+                    {validationErrors['class12.school'] && <p className="text-xs text-red-600 mt-1">{validationErrors['class12.school']}</p>}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label required>Percentage / CGPA</Label>
+                      <input type="number" min="0" max="100" step="0.01" value={schoolData.class12.percentage} onChange={e => handleSchoolChange('class12', 'percentage', e.target.value)} placeholder="e.g. 85.5" className={inputCls} />
+                      {validationErrors['class12.percentage'] && <p className="text-xs text-red-600 mt-1">{validationErrors['class12.percentage']}</p>}
+                    </div>
+                    <div>
+                      <Label required>Passing Year</Label>
+                      <input type="number" min="1980" max={new Date().getFullYear()} value={schoolData.class12.year} onChange={e => handleSchoolChange('class12', 'year', e.target.value)} placeholder="e.g. 2020" className={inputCls} />
+                      {validationErrors['class12.year'] && <p className="text-xs text-red-600 mt-1">{validationErrors['class12.year']}</p>}
+                    </div>
+                    <div>
+                      <Label>Board</Label>
+                      <input type="text" value={schoolData.class12.board} onChange={e => handleSchoolChange('class12', 'board', e.target.value)} placeholder="e.g. CBSE, ICSE" className={inputCls} />
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Mandatory notice */}
+              <div style={{ background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: '8px', padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <span style={{ color: '#ef4444', fontSize: '14px', marginTop: '1px' }}>⊘</span>
+                <p style={{ fontSize: '13px', color: '#b91c1c', margin: 0 }}>
+                  All 6 fields are mandatory. Profile cannot be saved without completing this section.
+                </p>
               </div>
             </div>
           )}
@@ -301,19 +439,49 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
           {/* SKILLS */}
           {activeTab === 'skills' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Skills</h3>
-              <div className="flex gap-2">
-                <input type="text" value={newSkill} onChange={(e) => setNewSkill(e.target.value)} placeholder="Add a skill (e.g., React, Python)" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())} className={inputCls} />
-                <button type="button" onClick={addSkill} className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium whitespace-nowrap">Add</button>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Technical Skills</h3>
+                <p className="text-sm text-gray-500 mt-1">Add skill categories (e.g. Programming Languages, Frameworks, Tools) and list skills within each.</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {formData.skills.map((skill, i) => (
-                  <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-                    {skill}
-                    <button type="button" onClick={() => removeSkill(i)} className="text-blue-600 hover:text-blue-900 font-bold leading-none">×</button>
-                  </span>
-                ))}
-                {formData.skills.length === 0 && <p className="text-sm text-gray-400">No skills added yet.</p>}
+
+              {(formData.skills || []).map((cat, ci) => (
+                <div key={ci} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                    <span className="font-semibold text-gray-800 text-sm">{cat.category}</span>
+                    <button type="button" onClick={() => removeSkillCategory(ci)}
+                      className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200">Remove</button>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {(cat.items || []).map((skill, si) => (
+                        <span key={si} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200">
+                          {skill}
+                          <button type="button" onClick={() => removeSkillFromCategory(ci, si)} className="text-blue-500 hover:text-blue-800 font-bold leading-none">×</button>
+                        </span>
+                      ))}
+                      {(cat.items || []).length === 0 && <p className="text-xs text-gray-400">No skills added yet.</p>}
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="text" value={categorySkillInputs[ci] || ''} onChange={e => setCategorySkillInputs(prev => ({ ...prev, [ci]: e.target.value }))}
+                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkillToCategory(ci))}
+                        placeholder="Add a skill and press Enter" className={inputCls} />
+                      <button type="button" onClick={() => addSkillToCategory(ci)}
+                        style={{ background: NAVY, color: '#fff', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex gap-2">
+                <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkillCategory())}
+                  placeholder="New category name (e.g. Programming Languages)" className={inputCls} />
+                <button type="button" onClick={addSkillCategory}
+                  style={{ background: NAVY, color: '#fff', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  + Add Category
+                </button>
               </div>
             </div>
           )}
@@ -489,6 +657,10 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
                       <label className={labelCls}>Certificate Link</label>
                       <input type="url" value={cert.certLink} onChange={(e) => updateCertification(index, 'certLink', e.target.value)} placeholder="https://..." className={inputCls} />
                     </div>
+                    <div className="md:col-span-2">
+                      <label className={labelCls}>Description</label>
+                      <textarea value={cert.description || ''} onChange={(e) => updateCertification(index, 'description', e.target.value)} placeholder="Brief description of what you learned or achieved..." rows="2" className={inputCls} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -527,6 +699,18 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
                     <div className="md:col-span-2">
                       <label className={labelCls}>Description</label>
                       <textarea value={pub.description} onChange={(e) => updatePublication(index, 'description', e.target.value)} placeholder="Brief description" rows="2" className={inputCls} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Key Points</label>
+                    <div className="space-y-2">
+                      {(pub.bullets || []).map((bullet, bi) => (
+                        <div key={bi} className="flex gap-2">
+                          <input type="text" value={bullet} onChange={(e) => updatePublicationBullet(index, bi, e.target.value)} placeholder="Key point about this publication" className={inputCls} />
+                          <button type="button" onClick={() => removePublicationBullet(index, bi)} className="text-red-500 hover:text-red-700 font-bold text-xl px-1">×</button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => addPublicationBullet(index)} className="text-sm px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">+ Add Point</button>
                     </div>
                   </div>
                 </div>
@@ -583,35 +767,35 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
           {/* COURSES */}
           {activeTab === 'courses' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Courses</h3>
-              {formData.courses.map((course, index) => (
-                <div key={index} className={`${cardCls} ${getCourseErrors(index).length > 0 ? 'border-red-300' : ''}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-700">Course {index + 1}</span>
-                    <button type="button" onClick={() => removeCourse(index)} className="text-sm px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">Remove</button>
-                  </div>
-                  <InlineErrors errors={getCourseErrors(index)} />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelCls}>Course Name *</label>
-                      <input type="text" value={course.name} onChange={(e) => updateCourse(index, 'name', e.target.value)} placeholder="Advanced Algorithms" required className={inputCls} />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Platform</label>
-                      <input type="text" value={course.platform} onChange={(e) => updateCourse(index, 'platform', e.target.value)} placeholder="Coursera, NPTEL..." className={inputCls} />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Completion Date</label>
-                      <input type="date" value={course.completionDate ? course.completionDate.split('T')[0] : ''} onChange={(e) => updateCourse(index, 'completionDate', e.target.value)} className={inputCls} />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Link</label>
-                      <input type="url" value={course.link} onChange={(e) => updateCourse(index, 'link', e.target.value)} placeholder="https://..." className={inputCls} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <button type="button" onClick={addCourse} className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium">+ Add Course</button>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Key Courses Taken</h3>
+                <p className="text-sm text-gray-500 mt-1">Add academic courses you have studied (e.g. Data Structures, DBMS, Operating Systems).</p>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCourse}
+                  onChange={e => setNewCourse(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCourse())}
+                  placeholder="Add a course name"
+                  className={inputCls}
+                />
+                <button type="button" onClick={addCourse}
+                  style={{ background: NAVY, color: '#fff', padding: '8px 18px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.courses.map((course, i) => (
+                  <span key={i} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
+                    style={{ background: '#eef2ff', color: NAVY, border: `1px solid #c7d2fe` }}>
+                    {course}
+                    <button type="button" onClick={() => removeCourse(i)}
+                      style={{ color: NAVY, fontWeight: 700, fontSize: '16px', lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+                  </span>
+                ))}
+                {formData.courses.length === 0 && <p className="text-sm text-gray-400">No courses added yet.</p>}
+              </div>
             </div>
           )}
 
@@ -626,7 +810,7 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
               <div className="space-y-2">
                 {formData.achievements.map((a, i) => (
                   <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="text-gray-800 text-sm">🏆 {a}</span>
+                    <span className="text-gray-800 text-sm">{a}</span>
                     <button type="button" onClick={() => removeAchievement(i)} className="text-red-500 hover:text-red-700 font-bold text-xl leading-none">×</button>
                   </div>
                 ))}
@@ -646,7 +830,7 @@ const ProfileForm = ({ profile, student, onUpdate }) => {
               <div className="space-y-2">
                 {formData.extracurricular.map((a, i) => (
                   <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="text-gray-800 text-sm">⚡ {a}</span>
+                    <span className="text-gray-800 text-sm">{a}</span>
                     <button type="button" onClick={() => removeExtracurricular(i)} className="text-red-500 hover:text-red-700 font-bold text-xl leading-none">×</button>
                   </div>
                 ))}
