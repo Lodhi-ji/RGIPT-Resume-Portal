@@ -36,38 +36,62 @@ class ExcelService {
     return null;
   }
 
+  // Extract plain string value from a cell — handles hyperlink objects from ExcelJS
+  extractCellValue(cell) {
+    if (cell === null || cell === undefined) return '';
+    // ExcelJS hyperlink object: { text: '...', hyperlink: '...' }
+    if (typeof cell === 'object' && cell.text !== undefined) return String(cell.text).trim();
+    if (typeof cell === 'object' && cell.hyperlink !== undefined) {
+      // mailto:email@domain.com → strip the mailto: prefix
+      const href = String(cell.hyperlink).trim();
+      return href.startsWith('mailto:') ? href.slice(7) : href;
+    }
+    return String(cell).trim();
+  }
+
   // Parse Excel file buffer (async, using exceljs)
+  // Processes ALL sheets and combines rows — sheets without required columns are skipped
   async parseExcelFile(buffer) {
     try {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
 
-      const worksheet = workbook.worksheets[0];
-      if (!worksheet) throw new Error('No worksheet found in Excel file');
+      if (!workbook.worksheets.length) throw new Error('No worksheet found in Excel file');
 
-      const data = [];
-      let headers = [];
+      const requiredColumns = ['name', 'rollNo', 'instituteEmail', 'branch', 'degree', 'cpi', 'graduationYear', 'semester'];
+      const allData = [];
 
-      worksheet.eachRow((row, rowNumber) => {
-        const values = row.values.slice(1); // row.values[0] is always undefined
-        if (rowNumber === 1) {
-          // First row = headers
-          headers = values.map(v => (v !== null && v !== undefined ? String(v).trim() : ''));
-        } else {
-          // Subsequent rows = data
-          const obj = {};
-          headers.forEach((header, i) => {
-            const cell = values[i];
-            obj[header] = cell !== undefined && cell !== null ? cell : '';
-          });
-          // Skip entirely empty rows
-          if (Object.values(obj).some(v => v !== '')) {
-            data.push(obj);
+      for (const worksheet of workbook.worksheets) {
+        const sheetData = [];
+        let headers = [];
+
+        worksheet.eachRow((row, rowNumber) => {
+          const values = row.values.slice(1); // row.values[0] is always undefined
+          if (rowNumber === 1) {
+            headers = values.map(v => (v !== null && v !== undefined ? String(v).trim() : ''));
+          } else {
+            const obj = {};
+            headers.forEach((header, i) => {
+              const cell = values[i];
+              obj[header] = cell !== undefined && cell !== null ? this.extractCellValue(cell) : '';
+            });
+            if (Object.values(obj).some(v => v !== '')) {
+              sheetData.push(obj);
+            }
+          }
+        });
+
+        // Only include this sheet if it has all required columns
+        if (sheetData.length > 0) {
+          const firstRow = sheetData[0];
+          const hasRequired = requiredColumns.every(col => col in firstRow);
+          if (hasRequired) {
+            allData.push(...sheetData);
           }
         }
-      });
+      }
 
-      return data;
+      return allData;
     } catch (error) {
       throw new Error('Failed to parse Excel file: ' + error.message);
     }
@@ -170,10 +194,10 @@ class ExcelService {
       branch: excelRow.branch.trim(),
       degree: excelRow.degree.trim(),
       graduationYear: excelRow.graduationYear.toString().trim(),
-      cpi: parseFloat(excelRow.cpi),
+      cpi: Math.round(parseFloat(excelRow.cpi) * 100) / 100,
       cgpaRemark: `till Semester ${parseInt(excelRow.semester.toString().trim()) - 1}`,
-      class10: { percentage: 0, school: '', year: '', board: '' },
-      class12: { percentage: 0, school: '', year: '', board: '' },
+      class10: { percentage: null, school: '', year: '', board: '' },
+      class12: { percentage: null, school: '', year: '', board: '' },
       password: null,  // No password until student activates account
       passwordSet: false,  // Account not activated yet
       role: 'student',

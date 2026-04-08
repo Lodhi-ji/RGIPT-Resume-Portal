@@ -47,13 +47,13 @@ const studentSchema = new mongoose.Schema({
   class10: {
     percentage: {
       type: Number,
-      required: [true, '10th percentage is required'],
+      default: null,
       min: 0,
       max: 100
     },
     school: {
       type: String,
-      required: [true, '10th school is required'],
+      default: '',
       trim: true
     },
     year: {
@@ -68,13 +68,13 @@ const studentSchema = new mongoose.Schema({
   class12: {
     percentage: {
       type: Number,
-      required: [true, '12th percentage is required'],
+      default: null,
       min: 0,
       max: 100
     },
     school: {
       type: String,
-      required: [true, '12th school is required'],
+      default: '',
       trim: true
     },
     year: {
