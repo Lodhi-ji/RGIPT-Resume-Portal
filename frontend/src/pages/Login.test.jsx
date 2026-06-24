@@ -77,9 +77,10 @@ describe('Login Component', () => {
     it('should render demo credentials section', () => {
       renderLogin();
 
-      expect(screen.getByText(/demo credentials/i)).toBeInTheDocument();
-      expect(screen.getByText(/priya.sharma@rgipt.ac.in/i)).toBeInTheDocument();
-      expect(screen.getByText(/admin@rgipt.ac.in/i)).toBeInTheDocument();
+      expect(screen.getByText('Demo Credentials')).toBeInTheDocument();
+      expect(screen.getByText('23cd3054@rgipt.ac.in')).toBeInTheDocument();
+      expect(screen.getByText('Password:', { exact: false })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /use demo/i })).toBeInTheDocument();
     });
   });
 

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const DEMO_EMAIL = '23cd3054@rgipt.ac.in';
+const DEMO_PASSWORD = '23Cd3054';
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,30 +35,30 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-dvh h-dvh overflow-y-auto bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="w-full max-w-md my-auto py-2">
         {/* Logo and Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <img 
             src="/rgipt_logo.png" 
             alt="RGIPT Logo" 
-            className="h-24 mx-auto mb-4"
+            className="h-14 sm:h-16 mx-auto mb-2"
           />
-          <h1 className="text-3xl font-bold text-gray-900">RGIPT Resume Portal</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">RGIPT Resume Portal</h1>
+          <p className="text-gray-600 mt-1 text-sm">Sign in to your account</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-xl shadow-xl p-8">
+        <div className="bg-white rounded-xl shadow-xl p-5 sm:p-6">
           {/* Error Message */}
           {error && (
-            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md">
+            <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-3 rounded-r-md">
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Input */}
             <div>
               <label 
@@ -69,7 +72,7 @@ const Login = () => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg
+                className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                          transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="your.email@rgipt.ac.in"
@@ -92,7 +95,7 @@ const Login = () => {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg
+                  className="w-full px-3 py-2.5 pr-12 border-2 border-gray-300 rounded-lg text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                            transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Enter your password"
@@ -124,8 +127,8 @@ const Login = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full px-4 py-3 bg-blue-500 hover:bg-blue-600 
-                       text-white font-semibold rounded-lg
+              className="w-full px-4 py-2.5 bg-blue-500 hover:bg-blue-600 
+                       text-white text-sm font-semibold rounded-lg
                        transition-colors duration-200
                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                        disabled:opacity-50 disabled:cursor-not-allowed"
@@ -135,8 +138,30 @@ const Login = () => {
             </button>
           </form>
 
+          {/* Demo Credentials */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 text-xs sm:text-sm text-blue-800">
+                <p className="font-semibold text-blue-900 mb-1">Demo Credentials</p>
+                <p className="truncate"><span className="font-medium">Email:</span> {DEMO_EMAIL}</p>
+                <p><span className="font-medium">Password:</span> {DEMO_PASSWORD}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail(DEMO_EMAIL);
+                  setPassword(DEMO_PASSWORD);
+                }}
+                className="shrink-0 text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors whitespace-nowrap"
+                disabled={loading}
+              >
+                Use demo
+              </button>
+            </div>
+          </div>
+
           {/* Sign Up and Forgot Password Links */}
-          <div className="mt-6 flex items-center justify-between text-sm">
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
             <Link 
               to="/activate-account" 
               className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
