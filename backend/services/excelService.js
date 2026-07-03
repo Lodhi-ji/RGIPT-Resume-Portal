@@ -238,7 +238,8 @@ class ExcelService {
           // Update existing student
           try {
             const studentData = await this.transformToStudent(row);
-            delete studentData.password; // Don't update password
+            delete studentData.password; // Don't overwrite an activated password
+            delete studentData.passwordSet; // Don't reset activation status on re-upload
             
             await Student.findByIdAndUpdate(existingByRollNo._id, studentData);
             

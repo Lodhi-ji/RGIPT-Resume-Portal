@@ -190,9 +190,10 @@ const changePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update password
+    // Update password and mark account as activated if flag was out of sync
     await Student.findByIdAndUpdate(req.user.id, {
-      password: hashedPassword
+      password: hashedPassword,
+      passwordSet: true
     });
 
     // Log password change
@@ -297,7 +298,7 @@ const sendOtp = async (req, res) => {
       });
     }
 
-    if (purpose === 'password_reset' && student.passwordSet === false) {
+    if (purpose === 'password_reset' && !student.password) {
       return res.status(400).json({
         success: false,
         error: {

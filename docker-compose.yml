@@ -1,0 +1,36 @@
+# Local full stack: backend + frontend (MongoDB Atlas + Upstash Redis — no local DB containers)
+# Usage:
+#   1. Copy backend/.env.docker.example to backend/.env and fill in secrets (incl. REDIS_URL from Upstash)
+#   2. docker compose up --build
+#   Frontend: http://localhost:5173
+#   Backend:  http://localhost:5000
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rgipt-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      FRONTEND_URL: http://localhost:5173
+      PORTAL_URL: http://localhost:5173
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api
+    container_name: rgipt-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend

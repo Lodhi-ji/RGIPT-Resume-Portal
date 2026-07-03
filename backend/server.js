@@ -2,9 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const { connectRedis, isRedisHealthy } = require('./config/redis');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+
+app.set('trust proxy', 1);
 
 // Connect to MongoDB
 connectDB();
@@ -32,11 +35,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString()
+app.get('/api/health', async (req, res) => {
+  const redisHealthy = await isRedisHealthy();
+
+  res.status(redisHealthy ? 200 : 503).json({
+    success: redisHealthy,
+    message: redisHealthy ? 'Server is running' : 'Server degraded — Redis unavailable',
+    redis: redisHealthy ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -51,6 +57,13 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+connectRedis()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error(`Redis connection failed: ${error.message}`);
+    process.exit(1);
+  });
